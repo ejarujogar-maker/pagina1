@@ -5,12 +5,16 @@ let emojiPickerCategory = 'Todos';
 let teacherDashboardInitialized = false;
 const emojiCategories = ['Todos', 'Animales', 'Frutas y alimentos', 'Naturaleza', 'Lugares y transporte', 'Caras y personas', 'Objetos y actividades'];
 
+// Normaliza texto de emoji para buscarlo y categorizarlo sin tildes.
+
 function normalizeEmojiText(value) {
   return String(value || '')
     .normalize('NFD')
     .replace(/\p{Diacritic}/gu, '')
     .toLocaleLowerCase('es');
 }
+
+// Clasifica un emoji según sus palabras clave para filtrar por categoría.
 
 function emojiCategory(item) {
   const keywords = normalizeEmojiText(item.keywords);
@@ -21,6 +25,8 @@ function emojiCategory(item) {
   if (/bebe|nina|nino|mujer|mama|hombre|papa|abuela|abuelo|maestra|profesora|amigo|amistad|corazon|amor|feliz|sonrisa|dormir|sueno|pensar|duda|aplauso|pulgar/.test(keywords)) return 'Caras y personas';
   return 'Objetos y actividades';
 }
+
+// Abre el selector de emoji para un campo concreto del formulario.
 
 function openEmojiPicker(input) {
   emojiPickerInput = input;
@@ -33,6 +39,8 @@ function openEmojiPicker(input) {
   document.getElementById('emoji-picker-search').focus();
 }
 
+// Cierra el modal del selector de emoji y limpia la selección.
+
 function closeEmojiPicker() {
   const modal = document.getElementById('emoji-picker-modal');
   modal.classList.add('hidden');
@@ -40,17 +48,21 @@ function closeEmojiPicker() {
   emojiPickerInput = null;
 }
 
+// Dibuja los emojis filtrados por categoría y texto de búsqueda.
+
 function renderEmojiPicker() {
   const categoryContainer = document.getElementById('emoji-picker-categories');
   const results = document.getElementById('emoji-picker-results');
   if (!categoryContainer || !results) return;
   categoryContainer.replaceChildren();
+  // Dibuja cada categoria del selector con el estado activo actual.
   emojiCategories.forEach(category => {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = `rounded-full px-3 py-1.5 text-xs font-black ${emojiPickerCategory === category ? 'bg-purple-700 text-white' : 'bg-purple-50 text-purple-800'}`;
     button.textContent = category;
     button.setAttribute('aria-pressed', String(emojiPickerCategory === category));
+    // Guarda la categoria elegida y vuelve a renderizar la vista.
     button.addEventListener('click', () => {
       emojiPickerCategory = category;
       renderEmojiPicker();
@@ -60,6 +72,7 @@ function renderEmojiPicker() {
   const searchTerms = normalizeEmojiText(document.getElementById('emoji-picker-search').value)
     .split(/\s+/)
     .filter(Boolean);
+  // Filtra el catalogo para mostrar solo emojis relevantes a la busqueda.
   const matches = LESSON_EMOJIS.filter(item =>
     (emojiPickerCategory === 'Todos' || emojiCategory(item) === emojiPickerCategory) &&
     searchTerms.every(term => normalizeEmojiText(`${item.keywords} ${item.emoji}`).includes(term))
@@ -73,6 +86,7 @@ function renderEmojiPicker() {
     button.title = keywords;
     button.setAttribute('role', 'option');
     button.setAttribute('aria-label', `${keywords}: ${emoji}`);
+    // Inserta el emoji elegido en el campo que abrio el selector.
     button.addEventListener('click', () => {
       const selectedInput = emojiPickerInput;
       if (selectedInput) {
@@ -92,16 +106,22 @@ function renderEmojiPicker() {
   }
 }
 
+// Cambia el panel activo de la vista del profesor.
+
 function switchTeacherModule(moduleName) {
+  // Oculta todos los paneles salvo el modulo activo del profesor.
   document.querySelectorAll('.teacher-module-panel').forEach(panel => {
     panel.classList.toggle('hidden', panel.id !== `teacher-module-${moduleName}`);
   });
+  // Marca la pestana visible segun el modulo actual.
   document.querySelectorAll('.teacher-module-tab').forEach(button => {
     button.classList.toggle('active', button.getAttribute('onclick')?.includes(`'${moduleName}'`));
   });
   if (moduleName === 'lesson') loadTeacherLessons();
   if (moduleName === 'game') loadTeacherGames();
 }
+
+// Abre el panel del profesor y carga la lista de alumnos.
 
 async function openTeacherDashboard() {
   if (!hasFullAccess()) return;
@@ -117,6 +137,7 @@ async function openTeacherDashboard() {
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'No se pudieron cargar los alumnos.');
     select.replaceChildren(new Option('Selecciona un alumno', ''));
+    // Carga cada alumno en el selector del panel docente.
     result.students.forEach(student => select.add(new Option(`${student.name} (@${student.username})`, student.id)));
     if (result.students.some(student => student.id === selectedBefore)) select.value = selectedBefore;
     await onTeacherStudentChange();
@@ -126,11 +147,15 @@ async function openTeacherDashboard() {
   }
 }
 
+// Cierra el panel del profesor y oculta sus datos.
+
 function closeTeacherDashboard() {
   const modal = document.getElementById('teacher-dashboard-modal');
   modal.classList.add('hidden');
   modal.classList.remove('flex');
 }
+
+// Recarga los reportes cuando cambia el alumno seleccionado.
 
 async function onTeacherStudentChange() {
   const studentId = document.getElementById('teacher-student-select').value;
@@ -149,6 +174,8 @@ async function onTeacherStudentChange() {
     refreshMapPositionOptions()
   ]);
 }
+
+// Ordena las lecciones para mostrarlas según su posición en el mapa.
 
 function orderLessonsForMap(customLessons = []) {
   const items = [...ALL_LESSONS];
@@ -227,6 +254,7 @@ async function loadStudentReport() {
     lessonContainer.append(heading);
     const lessonList = document.createElement('div');
     lessonList.className = 'space-y-2';
+    // Ordena las lecciones por repeticion y nombre para el informe del alumno.
     const sortedLessons = [...result.lessons].sort((left, right) =>
       right.attempts - left.attempts || String(lessonNames.get(left.lessonId) || left.lessonId)
         .localeCompare(String(lessonNames.get(right.lessonId) || right.lessonId), 'es'));
@@ -261,6 +289,7 @@ async function loadStudentReport() {
       empty.textContent = 'Todavía no hay lecciones personalizadas.';
       customContainer.append(empty);
     } else {
+      // Muestra cada leccion personalizada asignada con su avance actual.
       result.customLessons.forEach(lesson => {
         const progress = result.lessons.find(item => item.lessonId === lesson.id);
         const item = document.createElement('p');
@@ -281,6 +310,7 @@ async function loadStudentReport() {
       empty.textContent = 'Todavía no hay juegos personalizados.';
       gameContainer.append(empty);
     } else {
+      // Resume cada juego asignado con su estado actual de intentos o finalizacion.
       result.customGames.forEach(game => {
         const item = document.createElement('p');
         item.className = 'mb-2 rounded-xl bg-amber-50 px-3 py-2 text-sm font-bold text-slate-700';
@@ -294,6 +324,8 @@ async function loadStudentReport() {
     message.innerText = error.message;
   }
 }
+
+// Añade una fila con palabra, emoji y, si hace falta, sílaba.
 
 function addTeacherWordRow(containerId) {
   const container = document.getElementById(containerId);
@@ -321,6 +353,7 @@ function addTeacherWordRow(containerId) {
   chooseEmoji.textContent = emoji.value;
   chooseEmoji.title = 'Seleccionar emoji';
   chooseEmoji.setAttribute('aria-label', 'Seleccionar emoji para la imagen');
+  // Abre el selector de emojis desde el boton del formulario.
   chooseEmoji.addEventListener('click', () => openEmojiPicker(emoji));
   emoji.addEventListener('change', () => { chooseEmoji.textContent = emoji.value || '✨'; });
   emojiWrap.append(emoji, chooseEmoji);
@@ -338,6 +371,7 @@ function addTeacherWordRow(containerId) {
   remove.className = 'rounded-xl border-2 border-rose-100 px-3 py-2.5 font-black text-rose-600';
   remove.textContent = '×';
   remove.setAttribute('aria-label', 'Quitar palabra');
+  // Elimina la fila al quitar una palabra del formulario.
   remove.addEventListener('click', () => row.remove());
   row.append(word);
   if (containerId === 'game-word-rows') row.append(syllable);
@@ -347,10 +381,13 @@ function addTeacherWordRow(containerId) {
   word.focus();
 }
 
+// Activa o oculta campos según el tipo de juego personalizado.
+
 function updateGameWordRows() {
   const bridge = document.getElementById('custom-game-type')?.value === 'bridge';
   const container = document.getElementById('game-word-rows');
   if (container) {
+    // Ajusta la fila segun el tipo de juego y oculta la silaba si no aplica.
     container.querySelectorAll('.teacher-game-word-row').forEach(row => {
       const syllable = row.querySelector('.teacher-syllable-input');
       syllable.classList.toggle('hidden', !bridge);
@@ -452,6 +489,8 @@ async function loadTeacherCatalogLessons() {
   container.append(list);
 }
 
+// Rellena el formulario de lección con los datos de una actividad.
+
 function setLessonFormValues(lesson, words, emojis) {
   const form = document.getElementById('custom-lesson-form');
   document.getElementById('custom-lesson-map-position').parentElement.classList.toggle('hidden', Boolean(editingCatalogLessonId));
@@ -496,6 +535,8 @@ async function editCustomLesson(lesson) {
   switchTeacherModule('lesson');
 }
 
+// Carga una lección del catálogo para editarla en el panel del profesor.
+
 function editCatalogLesson(lesson) {
   editingCustomLessonId = null;
   editingCatalogLessonId = lesson.id;
@@ -503,6 +544,8 @@ function editCatalogLesson(lesson) {
   document.getElementById('custom-lesson-submit').textContent = 'Guardar cambios del catálogo';
   document.getElementById('custom-lesson-cancel-edit').classList.remove('hidden');
 }
+
+// Cancela la edición de una lección y vuelve al formulario base.
 
 function cancelLessonEdit() {
   editingCustomLessonId = null;
@@ -519,12 +562,16 @@ function cancelLessonEdit() {
   });
 }
 
+// Muestra un mensaje de error dentro de una lista del dashboard.
+
 function showTeacherListError(container, message) {
   const error = document.createElement('p');
   error.className = 'rounded-xl bg-rose-50 p-3 text-sm font-bold text-rose-700';
   error.textContent = message;
   container.append(error);
 }
+
+// Borra contenido del profesor tras confirmar la acción.
 
 async function deleteTeacherContent(type, id, title, refresh) {
   if (!confirm(`¿Quieres borrar "${title}"? Esta acción no se puede deshacer.`)) return;
@@ -539,6 +586,8 @@ async function deleteTeacherContent(type, id, title, refresh) {
     message.innerText = error.message;
   }
 }
+
+// Crea o actualiza una lección personalizada y la asigna al alumno.
 
 async function createCustomLesson(event) {
   event.preventDefault();
@@ -629,6 +678,8 @@ async function createCustomLesson(event) {
   }
 }
 
+// Carga las lecciones disponibles para resetear progreso de un alumno.
+
 async function loadTeacherResetLessons() {
   const studentId = document.getElementById('teacher-student-select').value;
   const select = document.getElementById('progress-reset-lesson');
@@ -643,6 +694,8 @@ async function loadTeacherResetLessons() {
   ];
   lessons.forEach(lesson => select.add(new Option(lesson.name, lesson.id)));
 }
+
+// Reinicia el progreso del alumno según el ámbito solicitado.
 
 async function resetStudentProgress() {
   const studentId = document.getElementById('teacher-student-select').value;
@@ -676,6 +729,8 @@ async function resetStudentProgress() {
   }
 }
 
+// Actualiza las subcategorías disponibles según la categoría elegida.
+
 function updateLessonSubcategories() {
   const category = document.getElementById('custom-lesson-category')?.value;
   const select = document.getElementById('custom-lesson-subcategory');
@@ -692,6 +747,8 @@ function updateLessonSubcategories() {
   document.getElementById('word-lesson-filters').classList.toggle('hidden', category !== 'Palabras');
 }
 
+// Inicializa los formularios y listeners del dashboard del profesor.
+
 function initializeTeacherDashboard() {
   if (teacherDashboardInitialized) return;
   teacherDashboardInitialized = true;
@@ -699,10 +756,13 @@ function initializeTeacherDashboard() {
   for (let index = 0; index < 4; index++) addTeacherWordRow('game-word-rows');
   updateLessonSubcategories();
   document.getElementById('custom-game-type').addEventListener('change', updateGameWordRows);
+  // Refresca la lista de emojis al escribir filtros de busqueda.
   document.getElementById('emoji-picker-search').addEventListener('input', renderEmojiPicker);
+  // Cierra el modal si se hace clic fuera del selector.
   document.getElementById('emoji-picker-modal').addEventListener('click', event => {
     if (event.target.id === 'emoji-picker-modal') closeEmojiPicker();
   });
+  // Cierra el selector con Escape cuando esta abierto.
   document.addEventListener('keydown', event => {
     if (event.key === 'Escape' && !document.getElementById('emoji-picker-modal').classList.contains('hidden')) {
       closeEmojiPicker();
@@ -712,6 +772,7 @@ function initializeTeacherDashboard() {
   refreshMapPositionOptions().catch(error => {
     document.getElementById('teacher-dashboard-message').innerText = error.message;
   });
+  // Muestra el selector adecuado segun el alcance del reinicio de progreso.
   document.getElementById('progress-reset-scope').addEventListener('change', event => {
     document.getElementById('progress-reset-lesson-wrap').classList.toggle('hidden', event.target.value !== 'lesson');
     document.getElementById('progress-reset-section-wrap').classList.toggle('hidden', event.target.value !== 'section');

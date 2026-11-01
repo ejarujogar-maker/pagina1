@@ -219,8 +219,11 @@ if (!customGameColumns.includes('activity_type')) {
   db.exec("ALTER TABLE custom_games ADD COLUMN activity_type TEXT NOT NULL DEFAULT 'standard'");
 }
 
+// Configura el proxy y desactiva cabeceras de diagn?stico para la API.
 app.set('trust proxy', process.env.TRUST_PROXY || 1);
+// Oculta la firma del servidor para reducir informaci?n ?til a clientes externos.
 app.disable('x-powered-by');
+// A?ade cabeceras de seguridad a cada respuesta del servidor.
 app.use((req, res, next) => {
   res.set({
     'X-Content-Type-Options': 'nosniff',
@@ -235,6 +238,7 @@ app.use((req, res, next) => {
 });
 let backupTimer = null;
 let backupInProgress = null;
+// Hace una copia de seguridad de la base de datos para conservar cambios recientes.
 function scheduleDatabaseBackup() {
   clearTimeout(backupTimer);
   backupTimer = setTimeout(async () => {
@@ -250,6 +254,7 @@ function scheduleDatabaseBackup() {
   }, 1000);
   backupTimer.unref?.();
 }
+// Dispara una copia de seguridad cuando una operaci?n de escritura termina con ?xito.
 app.use((req, res, next) => {
   if (['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) {
     res.on('finish', () => {
@@ -261,16 +266,19 @@ app.use((req, res, next) => {
 const backupInterval = setInterval(scheduleDatabaseBackup, 5 * 60 * 1000);
 backupInterval.unref?.();
 app.use(express.json({ limit: '16kb' }));
+// Parsea la cabecera de cookies para que cada ruta vea la sesi?n del cliente.
 app.use((req, res, next) => {
   req.cookies = Object.fromEntries((req.headers.cookie || '').split(';')
     .map(part => part.trim())
     .filter(Boolean)
+    // Convierte cada cookie en un par clave/valor para el flujo de autenticaci?n.
     .map(part => {
       const separator = part.indexOf('=');
       return separator < 0 ? [part, ''] : [part.slice(0, separator), part.slice(separator + 1)];
     }));
   next();
 });
+// Rechaza solicitudes con origen cruzado cuando no coinciden con el host esperado.
 app.use((req, res, next) => {
   if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method)) return next();
   const origin = req.get('origin');
@@ -287,11 +295,13 @@ app.use((req, res, next) => {
   next();
 });
 
+// Genera un hash con sal para guardar contrase?as sin almacenarlas en texto plano.
 function passwordHash(password, salt = crypto.randomBytes(16).toString('hex')) {
   const hash = crypto.scryptSync(password, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 });
   return { hash: hash.toString('hex'), salt };
 }
 
+// Valida la complejidad m?nima de la contrase?a antes de aceptar la cuenta.
 function passwordPolicyError(password) {
   if (password.length < 10 || password.length > 128 ||
       !/\p{Ll}/u.test(password) || !/\p{Lu}/u.test(password) ||
@@ -301,14 +311,17 @@ function passwordPolicyError(password) {
   return '';
 }
 
+// Calcula el hash SHA-256 del token para almacenarlo de forma segura en la base de datos.
 function tokenDigest(token) {
   return crypto.createHash('sha256').update(token).digest('hex');
 }
 
+// Genera un digest firmado con la clave del servidor para evitar manipulaciones.
 function keyedDigest(value) {
   return crypto.createHmac('sha256', requestSecret).update(value).digest('hex');
 }
 
+// Reduce un usuario a la versi?n p?blica que la API comparte con el cliente.
 function publicUser(user) {
   return {
     id: user.id,
@@ -320,6 +333,7 @@ function publicUser(user) {
   };
 }
 
+// Recupera el progreso acumulado y los resultados asociados de un alumno.
 function readProgress(userId) {
   const record = db.prepare('SELECT xp, completed_lessons, completed_arcade_levels FROM progress WHERE user_id = ?').get(userId);
   return record ? {
@@ -330,6 +344,7 @@ function readProgress(userId) {
   } : { xp: 0, completedLessons: [], completedArcadeLevels: [], lessonResults: readLessonResults(userId) };
 }
 
+// Obtiene las m?tricas por lecci?n del estudiante para el panel o la app.
 function readLessonResults(userId) {
   return db.prepare(`
     SELECT lesson_id AS lessonId, category, attempts, mistakes, best_stars AS bestStars,
@@ -338,6 +353,7 @@ function readLessonResults(userId) {
   `).all(userId);
 }
 
+// Guarda el XP y el estado de lecciones completadas del usuario.
 function writeProgress(userId, progress) {
   db.prepare(`
     INSERT INTO progress (user_id, xp, completed_lessons, completed_arcade_levels, updated_at)
@@ -351,6 +367,7 @@ function writeProgress(userId, progress) {
     JSON.stringify(progress.completedArcadeLevels), Date.now());
 }
 
+// Corrige el formato heredado del progreso para que coincida con la secuencia actual.
 function normalizeStoredProgress() {
   const records = db.prepare('SELECT user_id, completed_lessons, completed_arcade_levels FROM progress').all();
   for (const record of records) {
@@ -375,10 +392,12 @@ function normalizeStoredProgress() {
   }
 }
 
+// Comprueba si un rol tiene permisos para gestionarlo todo del aula.
 function hasFullAccess(role) {
   return role === 'profesor' || role === 'superadmin';
 }
 
+// Exige autenticaci?n y permisos de profesor o superadministrador.
 function requireTeacherOrAdmin(req, res, next) {
   requireAuth(req, res, error => {
     if (error) return next(error);
@@ -387,6 +406,7 @@ function requireTeacherOrAdmin(req, res, next) {
   });
 }
 
+// Clasifica una lecci?n seg?n la rama curricular a la que pertenece.
 function lessonCategory(lessonId) {
   if (/^l[1-5]$/.test(lessonId)) return 'Vocales';
   if (/^l\d+$/.test(lessonId)) return 'Consonantes';
@@ -397,6 +417,7 @@ function lessonCategory(lessonId) {
   return null;
 }
 
+// Comprueba que los filtros de palabras solo usen claves y valores admitidos.
 function isValidWordFilters(filters) {
   if (!filters || typeof filters !== 'object' || Array.isArray(filters)) return false;
   const allowed = {
@@ -408,6 +429,7 @@ function isValidWordFilters(filters) {
   return Object.entries(filters).every(([key, value]) => allowed[key]?.includes(value));
 }
 
+// Convierte una fila de override del contenido en un objeto listo para la API.
 function parseLessonOverride(row) {
   return {
     id: row.id, title: row.title, target: row.target, description: row.description,
@@ -418,6 +440,7 @@ function parseLessonOverride(row) {
   };
 }
 
+// Valida y limpia una lecci?n personalizada antes de guardarla.
 function normalizeCustomLesson(body) {
   const {
     studentId, title, description = '', category, subcategory = '',
@@ -457,6 +480,7 @@ function normalizeCustomLesson(body) {
 
 normalizeStoredProgress();
 
+// Crea la cookie que mantiene la sesi?n autenticada del usuario.
 function setSessionCookie(res, token) {
   res.cookie('lecturaclub_session', token, {
     httpOnly: true,
@@ -467,6 +491,7 @@ function setSessionCookie(res, token) {
   });
 }
 
+// Elimina la cookie de sesi?n para cerrar la autenticaci?n del cliente.
 function clearSessionCookie(res) {
   res.clearCookie('lecturaclub_session', {
     httpOnly: true,
@@ -476,6 +501,7 @@ function clearSessionCookie(res) {
   });
 }
 
+// Genera un token nuevo y lo registra en la base de datos para iniciar sesi?n.
 function createSession(userId, res) {
   const token = crypto.randomBytes(32).toString('base64url');
   const now = Date.now();
@@ -484,6 +510,7 @@ function createSession(userId, res) {
   setSessionCookie(res, token);
 }
 
+// Revisa la sesi?n almacenada en la cookie y carga el usuario autenticado.
 function requireAuth(req, res, next) {
   const token = req.cookies?.lecturaclub_session;
   if (!token) return res.status(401).json({ error: 'Inicia sesión para continuar.' });
@@ -501,6 +528,7 @@ function requireAuth(req, res, next) {
   next();
 }
 
+// Requiere a la sesi?n del superadministrador para acceder a la ruta.
 function requireSuperAdmin(req, res, next) {
   requireAuth(req, res, error => {
     if (error) return next(error);
@@ -509,10 +537,12 @@ function requireSuperAdmin(req, res, next) {
   });
 }
 
+// Normaliza un correo o usuario para comparaciones y almacenamiento coherentes.
 function normalizedIdentifier(value) {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
+// Comprueba si el usuario o la IP ya superaron los intentos permitidos.
 function loginIsLimited(identifier, ip) {
   const identifierHash = keyedDigest(`identifier:${identifier}`);
   const ipHash = keyedDigest(`ip:${ip}`);
@@ -524,11 +554,13 @@ function loginIsLimited(identifier, ip) {
   return { limited: count >= maxLoginAttempts, identifierHash, ipHash };
 }
 
+// Registra un intento fallido para frenar ataques repetidos.
 function recordLoginFailure(identifierHash, ipHash) {
   db.prepare('INSERT INTO login_attempts (identifier_hash, ip_hash, attempted_at) VALUES (?, ?, ?)').run(identifierHash, ipHash, Date.now());
   db.prepare('DELETE FROM login_attempts WHERE attempted_at < ?').run(Date.now() - 24 * 60 * 60 * 1000);
 }
 
+// Verifica si el dominio del correo tiene un servidor MX v?lido para enviar mensajes.
 async function emailDomainHasMailServer(email) {
   if (process.env.EMAIL_DOMAIN_CHECK === 'skip' && process.env.NODE_ENV === 'test') return true;
   const domain = email.slice(email.lastIndexOf('@') + 1);
@@ -550,6 +582,7 @@ async function emailDomainHasMailServer(email) {
   }
 }
 
+// Detecta si una direcci?n o IP ha pedido demasiadas verificaciones en poco tiempo.
 function verificationIsLimited(email, ip) {
   const emailHash = keyedDigest(`verification-email:${email}`);
   const ipHash = keyedDigest(`verification-ip:${ip}`);
@@ -561,6 +594,7 @@ function verificationIsLimited(email, ip) {
   return { limited: count >= 3, emailHash, ipHash };
 }
 
+// Comprueba si la misma cuenta o IP agot? los intentos de c?digo de verificaci?n.
 function verificationCodeIsLimited(email, ip) {
   const emailHash = keyedDigest(`verification-code-email:${email}`);
   const ipHash = keyedDigest(`verification-code-ip:${ip}`);
@@ -572,6 +606,7 @@ function verificationCodeIsLimited(email, ip) {
   return { limited: count >= maxVerificationCodeAttempts, emailHash, ipHash };
 }
 
+// Guarda cada fracaso de verificaci?n para bloquear intentos masivos.
 function recordVerificationCodeFailure(emailHash, ipHash) {
   db.prepare('INSERT INTO email_verification_attempts (email_hash, ip_hash, attempted_at) VALUES (?, ?, ?)')
     .run(emailHash, ipHash, Date.now());
@@ -579,6 +614,7 @@ function recordVerificationCodeFailure(emailHash, ipHash) {
     .run(Date.now() - 24 * 60 * 60 * 1000);
 }
 
+// Compara la frecuencia de recuperaci?n para evitar abusos del servicio.
 function passwordResetIsLimited(email, ip) {
   const emailHash = keyedDigest(`reset-email:${email}`);
   const ipHash = keyedDigest(`reset-ip:${ip}`);
@@ -590,6 +626,7 @@ function passwordResetIsLimited(email, ip) {
   return { limited: count >= 3, emailHash, ipHash };
 }
 
+// Env?a un c?digo temporal para verificar la cuenta y activar el acceso.
 async function sendVerificationEmail(user) {
   const code = String(crypto.randomInt(0, 1_000_000)).padStart(6, '0');
   db.prepare('DELETE FROM email_verification_tokens WHERE user_id = ?').run(user.id);
@@ -647,6 +684,7 @@ const mailTransport = smtpHost && smtpUser && smtpPassword
   })
   : null;
 
+// Registra una nueva cuenta y exige verificaci?n del correo antes de activar el acceso.
 app.post('/api/auth/register', async (req, res) => {
   const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
   const email = normalizedIdentifier(req.body?.email);
@@ -700,6 +738,7 @@ app.post('/api/auth/register', async (req, res) => {
   }
 });
 
+// Valida credenciales y crea la sesi?n autenticada del usuario.
 app.post('/api/auth/login', async (req, res) => {
   const identifier = normalizedIdentifier(req.body?.identifier);
   const password = req.body?.password;
@@ -749,6 +788,7 @@ app.post('/api/auth/login', async (req, res) => {
   res.json({ user: publicUser(user), progress: readProgress(user.id) });
 });
 
+// Devuelve el perfil del usuario autenticado para el cliente y el panel.
 app.get('/api/auth/me', (req, res) => {
   const token = req.cookies?.lecturaclub_session;
   if (!token) return res.json({ user: null, progress: null });
@@ -765,6 +805,7 @@ app.get('/api/auth/me', (req, res) => {
   res.json({ user: publicUser(user), progress: readProgress(user.id) });
 });
 
+// Comprueba el c?digo de verificaci?n y activa la cuenta del usuario.
 app.post('/api/auth/verify-email', (req, res) => {
   const email = normalizedIdentifier(req.body?.email);
   const code = req.body?.code;
@@ -798,6 +839,7 @@ app.post('/api/auth/verify-email', (req, res) => {
   res.json({ message: 'Correo confirmado. Ya puedes iniciar sesión.' });
 });
 
+// Reenv?a un c?digo de confirmaci?n cuando el usuario lo solicita de nuevo.
 app.post('/api/auth/resend-verification', async (req, res) => {
   if (!mailTransport || !baseUrl) {
     return res.status(503).json({ error: 'El envío de correo no está configurado en el servidor.' });
@@ -823,6 +865,7 @@ app.post('/api/auth/resend-verification', async (req, res) => {
   res.json({ message: 'Si la cuenta necesita confirmación, enviaremos un nuevo código a ese correo.' });
 });
 
+// Cierra la sesi?n actual y elimina la cookie del cliente.
 app.post('/api/auth/logout', (req, res) => {
   const token = req.cookies?.lecturaclub_session;
   if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenDigest(token));
@@ -830,6 +873,7 @@ app.post('/api/auth/logout', (req, res) => {
   res.json({ ok: true });
 });
 
+// Solicita un enlace de recuperaci?n para restablecer la contrase?a.
 app.post('/api/auth/forgot-password', async (req, res) => {
   if (!mailTransport || !baseUrl) {
     return res.status(503).json({ error: 'La recuperación por correo no está configurada en el servidor.' });
@@ -867,6 +911,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
   res.json({ message: 'Si existe una cuenta con ese correo, recibirá un enlace de recuperación válido durante 30 minutos.' });
 });
 
+// Cambia la contrase?a usando el token temporal de recuperaci?n.
 app.post('/api/auth/reset-password', (req, res) => {
   const token = req.body?.token;
   const password = req.body?.password;
@@ -885,6 +930,7 @@ app.post('/api/auth/reset-password', (req, res) => {
   res.json({ message: 'Contraseña actualizada. Ya puedes iniciar sesión.' });
 });
 
+// Lista los usuarios del panel administrativo con su estado y progreso.
 app.get('/api/admin/users', requireSuperAdmin, (req, res) => {
   const users = db.prepare(`
     SELECT users.id, users.name, users.email, users.username, users.role,
@@ -898,6 +944,7 @@ app.get('/api/admin/users', requireSuperAdmin, (req, res) => {
   res.json({ users, currentUserId: req.user.id });
 });
 
+// Crea una cuenta de profesor o alumno desde el panel de administraci?n.
 app.post('/api/admin/users', requireSuperAdmin, (req, res) => {
   const name = typeof req.body?.name === 'string' ? req.body.name.trim() : '';
   const email = normalizedIdentifier(req.body?.email);
@@ -932,6 +979,7 @@ app.post('/api/admin/users', requireSuperAdmin, (req, res) => {
   }
 });
 
+// Actualiza el rol del usuario seleccionado por el superadministrador.
 app.patch('/api/admin/users/:id/role', requireSuperAdmin, (req, res) => {
   const { role } = req.body || {};
   if (!['alumno', 'profesor'].includes(role)) {
@@ -946,6 +994,7 @@ app.patch('/api/admin/users/:id/role', requireSuperAdmin, (req, res) => {
   res.json({ ok: true, role });
 });
 
+// Elimina l?gicamente una cuenta y revoca sus sesiones activas.
 app.delete('/api/admin/users/:id', requireSuperAdmin, (req, res) => {
   const userId = req.params.id;
   if (userId === req.user.id) {
@@ -963,12 +1012,14 @@ app.delete('/api/admin/users/:id', requireSuperAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// Restaura una cuenta previamente eliminada para volver a usarla.
 app.post('/api/admin/users/:id/restore', requireSuperAdmin, (req, res) => {
   const result = db.prepare('UPDATE users SET deleted_at = NULL, access_blocked_at = NULL WHERE id = ? AND deleted_at IS NOT NULL').run(req.params.id);
   if (!result.changes) return res.status(404).json({ error: 'No se encontró una cuenta eliminada para restaurar.' });
   res.json({ ok: true });
 });
 
+// Bloquea o desbloquea el acceso de un usuario activo.
 app.patch('/api/admin/users/:id/access', requireSuperAdmin, (req, res) => {
   const { blocked } = req.body || {};
   if (typeof blocked !== 'boolean') return res.status(400).json({ error: 'Indica si el acceso debe quedar bloqueado.' });
@@ -979,6 +1030,7 @@ app.patch('/api/admin/users/:id/access', requireSuperAdmin, (req, res) => {
   res.json({ ok: true, blocked });
 });
 
+// Cierra todas las sesiones abiertas del usuario objetivo.
 app.delete('/api/admin/users/:id/sessions', requireSuperAdmin, (req, res) => {
   const target = db.prepare('SELECT id FROM users WHERE id = ? AND deleted_at IS NULL').get(req.params.id);
   if (!target) return res.status(404).json({ error: 'No se encontró una cuenta activa.' });
@@ -986,6 +1038,7 @@ app.delete('/api/admin/users/:id/sessions', requireSuperAdmin, (req, res) => {
   res.json({ ok: true, closedSessions: result.changes });
 });
 
+// Devuelve las lecciones personalizadas del alumno o del grupo que se consulta.
 app.get('/api/lessons/custom', requireAuth, (req, res) => {
   const studentId = req.user.role === 'alumno'
     ? req.user.id
@@ -1004,6 +1057,7 @@ app.get('/api/lessons/custom', requireAuth, (req, res) => {
   })) });
 });
 
+// Lista los alumnos asignados al profesor o administrador.
 app.get('/api/teacher/students', requireTeacherOrAdmin, (req, res) => {
   const students = db.prepare(`
     SELECT users.id, users.name, users.username, users.email, COALESCE(progress.xp, 0) AS xp
@@ -1013,6 +1067,7 @@ app.get('/api/teacher/students', requireTeacherOrAdmin, (req, res) => {
   res.json({ students });
 });
 
+// Consulta la experiencia acumulada de un alumno concreto.
 app.get('/api/teacher/students/:id/experience', requireTeacherOrAdmin, (req, res) => {
   const student = db.prepare("SELECT id, name, username FROM users WHERE id = ? AND role = 'alumno' AND deleted_at IS NULL")
     .get(req.params.id);
@@ -1037,6 +1092,7 @@ app.get('/api/teacher/students/:id/experience', requireTeacherOrAdmin, (req, res
   res.json({ student, progress: readProgress(student.id), lessons, games });
 });
 
+// Recupera el avance detallado de un alumno para acompa?amiento pedag?gico.
 app.get('/api/teacher/students/:id/progress', requireTeacherOrAdmin, (req, res) => {
   const student = db.prepare("SELECT id, name, username FROM users WHERE id = ? AND role = 'alumno' AND deleted_at IS NULL").get(req.params.id);
   if (!student) return res.status(404).json({ error: 'No se encontró ese alumno.' });
@@ -1083,6 +1139,7 @@ app.get('/api/teacher/students/:id/progress', requireTeacherOrAdmin, (req, res) 
   res.json({ student, sections, lessons, customLessons, customGames });
 });
 
+// Expone el cat?logo de lecciones disponible para profesores.
 app.get('/api/teacher/lessons', requireTeacherOrAdmin, (req, res) => {
   const lessons = db.prepare(`
     SELECT custom_lessons.id, custom_lessons.title, custom_lessons.description,
@@ -1100,16 +1157,19 @@ app.get('/api/teacher/lessons', requireTeacherOrAdmin, (req, res) => {
   })) });
 });
 
+// Devuelve los overrides de lecciones para editar el contenido del curso.
 app.get('/api/teacher/lesson-overrides', requireTeacherOrAdmin, (req, res) => {
   const overrides = db.prepare('SELECT * FROM lesson_overrides ORDER BY id').all();
   res.json({ overrides: overrides.map(parseLessonOverride) });
 });
 
+// Obtiene los overrides visibles para el usuario actual.
 app.get('/api/lessons/overrides', requireAuth, (req, res) => {
   const overrides = db.prepare('SELECT * FROM lesson_overrides ORDER BY id').all();
   res.json({ overrides: overrides.map(parseLessonOverride) });
 });
 
+// Guarda una lecci?n del cat?logo o la reemplaza si ya exist?a.
 app.put('/api/teacher/lessons/catalog/:id', requireTeacherOrAdmin, (req, res) => {
   const { title, target, description = '', category, subcategory = '', examples = [],
     syllables = [], readingText = '', options = [], wordFilters = {} } = req.body || {};
@@ -1151,6 +1211,7 @@ app.put('/api/teacher/lessons/catalog/:id', requireTeacherOrAdmin, (req, res) =>
   res.json({ override });
 });
 
+// Elimina una lecci?n personalizada del profesor o del contenido docente.
 app.delete('/api/teacher/lessons/:id', requireTeacherOrAdmin, (req, res) => {
   const lesson = db.prepare('SELECT id, student_id AS studentId, map_position AS mapPosition FROM custom_lessons WHERE id = ?').get(req.params.id);
   if (!lesson) return res.status(404).json({ error: 'No se encontró una lección que puedas borrar.' });
@@ -1172,6 +1233,7 @@ app.delete('/api/teacher/lessons/:id', requireTeacherOrAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// Actualiza una lecci?n del profesor con el contenido nuevo enviado por el cliente.
 app.put('/api/teacher/lessons/:id', requireTeacherOrAdmin, (req, res) => {
   const lesson = db.prepare('SELECT id, student_id AS studentId, map_position AS mapPosition FROM custom_lessons WHERE id = ?').get(req.params.id);
   if (!lesson) return res.status(404).json({ error: 'No se encontró esa lección.' });
@@ -1212,6 +1274,7 @@ app.put('/api/teacher/lessons/:id', requireTeacherOrAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// Crea una nueva lecci?n did?ctica para uso de un alumno o grupo.
 app.post('/api/teacher/lessons', requireTeacherOrAdmin, (req, res) => {
   const input = normalizeCustomLesson(req.body);
   if (!input) return res.status(400).json({ error: 'Completa el título, descripción, ubicación, objetivo y entre 2 y 8 palabras válidas con sus emojis.' });
@@ -1244,6 +1307,7 @@ app.post('/api/teacher/lessons', requireTeacherOrAdmin, (req, res) => {
   res.status(201).json({ lesson: { ...lesson, isCustom: true } });
 });
 
+// Devuelve los juegos personalizados asociados al usuario actual.
 app.get('/api/games/custom', requireAuth, (req, res) => {
   const games = req.user.role === 'alumno'
     ? db.prepare(`
@@ -1260,6 +1324,7 @@ app.get('/api/games/custom', requireAuth, (req, res) => {
   res.json({ games });
 });
 
+// Lista los juegos del profesor para gestionarlos desde el dashboard.
 app.get('/api/teacher/games', requireTeacherOrAdmin, (req, res) => {
   const games = req.user.role === 'superadmin'
     ? db.prepare(`
@@ -1281,6 +1346,7 @@ app.get('/api/teacher/games', requireTeacherOrAdmin, (req, res) => {
   res.json({ games: games.map(game => ({ ...game, items: JSON.parse(game.items) })) });
 });
 
+// Borra un juego personalizado y sus resultados asociados.
 app.delete('/api/teacher/games/:id', requireTeacherOrAdmin, (req, res) => {
   const game = req.user.role === 'superadmin'
     ? db.prepare('SELECT id FROM custom_games WHERE id = ?').get(req.params.id)
@@ -1290,6 +1356,7 @@ app.delete('/api/teacher/games/:id', requireTeacherOrAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// Crea un juego de tipo puzzle o parejas para un estudiante.
 app.post('/api/teacher/games', requireTeacherOrAdmin, (req, res) => {
   const { studentId, title, type = 'puzzle', items, theme = 'orange' } = req.body || {};
   const validThemes = ['violet', 'blue', 'green', 'orange', 'pink'];
@@ -1329,6 +1396,7 @@ app.post('/api/teacher/games', requireTeacherOrAdmin, (req, res) => {
   res.status(201).json({ game });
 });
 
+// Guarda la finalizaci?n del juego personalizado del alumno.
 app.post('/api/games/custom/:id/complete', requireAuth, (req, res) => {
   if (req.user.role !== 'alumno') return res.status(403).json({ error: 'Solo el alumno asignado puede completar este juego.' });
   const game = db.prepare('SELECT id FROM custom_games WHERE id = ? AND student_id = ?').get(req.params.id, req.user.id);
@@ -1341,10 +1409,12 @@ app.post('/api/games/custom/:id/complete', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// Entrega el progreso del usuario autenticado al cliente.
 app.get('/api/progress', requireAuth, (req, res) => {
   res.json(readProgress(req.user.id));
 });
 
+// Guarda el progreso del alumno con XP y lecciones completadas.
 app.put('/api/progress', requireAuth, (req, res) => {
   const { xp, completedLessons, completedArcadeLevels } = req.body || {};
   if (!Number.isSafeInteger(xp) || xp < 0 || xp > 1_000_000_000 ||
@@ -1357,6 +1427,7 @@ app.put('/api/progress', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+// Reinicia el progreso del estudiante cuando se solicita un nuevo inicio.
 app.post('/api/progress/reset', requireAuth, (req, res) => {
   if (!hasFullAccess(req.user.role)) return res.status(403).json({ error: 'Solo el profesor o superadministrador puede reiniciar el progreso.' });
   const { scope = 'all', lessonId, category } = req.body || {};
@@ -1400,6 +1471,7 @@ app.post('/api/progress/reset', requireAuth, (req, res) => {
   res.json({ ok: true, progress: readProgress(studentId) });
 });
 
+// Marca una actividad como completada y actualiza XP y logros.
 app.post('/api/progress/complete', requireAuth, (req, res) => {
   const { type, id, gameId, level } = req.body || {};
   const privileged = hasFullAccess(req.user.role);
@@ -1495,22 +1567,34 @@ app.post('/api/progress/complete', requireAuth, (req, res) => {
   }
 });
 
+// Sirve la p?gina principal de la aplicaci?n para el navegador.
 app.get(['/', '/index.html'], (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+// Sirve el archivo JavaScript principal del cliente.
 app.get('/script.js', (req, res) => res.sendFile(path.join(__dirname, 'script.js')));
+// Entrega el script de protecci?n de sesi?n para la vista del alumno.
 app.get('/session-protection.js', (req, res) => res.sendFile(path.join(__dirname, 'session-protection.js')));
+// Sirve el reproductor de lecciones que maneja el contenido educativo.
 app.get('/lesson-player.js', (req, res) => res.sendFile(path.join(__dirname, 'lesson-player.js')));
+// Entrega el dashboard del profesor para gestionar alumnos y contenido.
 app.get('/teacher-dashboard.js', (req, res) => res.sendFile(path.join(__dirname, 'teacher-dashboard.js')));
+// Sirve el script de juegos personalizados para la interfaz interactiva.
 app.get('/custom-games.js', (req, res) => res.sendFile(path.join(__dirname, 'custom-games.js')));
+// Entrega el cat?logo de emojis para crear lecciones y juegos.
 app.get('/emoji-catalog.js', (req, res) => res.sendFile(path.join(__dirname, 'emoji-catalog.js')));
+// Sirve el contenido arcade del proyecto para los minijuegos.
 app.get('/arcade-content.js', (req, res) => res.sendFile(path.join(__dirname, 'arcade-content.js')));
+// Sirve la hoja de estilos principal para la experiencia visual.
 app.get('/style.css', (req, res) => res.sendFile(path.join(__dirname, 'style.css')));
+// Env?a un 404 cuando la ruta solicitada no existe en la app.
 app.use((req, res) => res.sendStatus(404));
+// Maneja errores globales y devuelve una respuesta HTTP ?til al cliente.
 app.use((error, req, res, next) => {
   console.error('Error en la solicitud:', error);
   if (res.headersSent) return next(error);
   res.status(error.status || 500).json({ error: error.status === 413 ? 'La solicitud es demasiado grande.' : 'Error interno del servidor.' });
 });
 
+// Arranca el servidor HTTP para aceptar conexiones del navegador.
 const server = app.listen(port, () => {
   scheduleDatabaseBackup();
   console.log(`LecturaClub disponible en http://localhost:${server.address().port}`);

@@ -75,11 +75,16 @@ const WORD_IMAGES = {
   viento: '💨', hojas: '🍂', vacaciones: '🏖️', montaña: '⛰️', playa: '🏖️'
 };
 
+// Devuelve el emoji de una palabra o el icono por defecto.
+
 function getWordImage(word, fallback = '📖') {
   return WORD_IMAGES[word.toLocaleLowerCase('es')] || fallback;
 }
 
+// Escapa el texto para evitar HTML no seguro en la interfaz.
+
 function escapeHtml(value) {
+  // Convierte caracteres seguros en entidades HTML para evitar inyeccion de marca.
   return String(value).replace(/[&<>"']/g, character => ({
     '&': '&amp;',
     '<': '&lt;',
@@ -89,7 +94,10 @@ function escapeHtml(value) {
   })[character]);
 }
 
+// Genera la URL de un emoji para mostrarlo en la pantalla.
+
 function emojiImageUrl(emoji) {
+  // Convierte cada simbolo a su codigo Unicode para compilar la URL del emoji.
   const codepoints = Array.from(emoji)
     .map(character => character.codePointAt(0).toString(16))
     .filter(codepoint => codepoint !== 'fe0f')
@@ -97,7 +105,10 @@ function emojiImageUrl(emoji) {
   return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${codepoints}.svg`;
 }
 
+// Crea una lección de sílabas con sus palabras y apoyo visual.
+
 function makeSyllableLesson(id, name, syllables, words, emoji = '📖') {
+  // Normaliza cada silaba antes de preparar la leccion y sus ejemplos.
   const normalizedSyllables = syllables.map(syllable => syllable.toLocaleUpperCase('es'));
   return {
     id,
@@ -107,9 +118,12 @@ function makeSyllableLesson(id, name, syllables, words, emoji = '📖') {
     mouth: 'Lee cada sílaba en voz alta y después practica las palabras.',
     syllables: normalizedSyllables,
     options: [normalizedSyllables[0], normalizedSyllables[Math.floor(normalizedSyllables.length / 2)], normalizedSyllables.at(-1)],
+    // Genera la imagen de cada palabra de la leccion a partir de su texto.
     examples: words.map(word => ({ w: word, emoji: getWordImage(word, emoji) }))
   };
 }
+
+// Crea una lección de lectura con palabras y texto guía.
 
 function makeReadingLesson(id, name, words, readingText, emoji = '📚') {
   const target = words[0].toLocaleUpperCase('es');
@@ -121,6 +135,7 @@ function makeReadingLesson(id, name, words, readingText, emoji = '📚') {
     mouth: 'Escucha la lectura y luego léela con calma.',
     readingText,
     options: [target, words[1].toLocaleUpperCase('es'), words[2].toLocaleUpperCase('es')],
+    // Genera la imagen de cada palabra de la leccion a partir de su texto.
     examples: words.map(word => ({ w: word, emoji: getWordImage(word, emoji) }))
   };
 }
@@ -182,6 +197,8 @@ ALL_LESSONS.push(...BOOK_LESSONS);
    ========================================================================== */
 const STORAGE_KEY = 'lecturaclub_state_v6';
 
+// Lee un valor guardado en localStorage usando un fallback.
+
 function readStoredValue(key, fallback) {
   try {
     const value = localStorage.getItem(key);
@@ -223,15 +240,21 @@ let studentPreviewActive = false;
 let studentPreviewReturnState = null;
 window.isStudentPreviewActive = () => studentPreviewActive;
 
+// Elimina los temporizadores activos de minijuegos abiertos.
+
 function clearActiveGameIntervals() {
   activeGameIntervals.forEach(interval => clearInterval(interval));
   activeGameIntervals = [];
 }
 
+// Recarga la interfaz con el estado visible actual del usuario y progreso.
+
 function loadState() {
   updateAuthUI();
   updateStatsUI();
 }
+
+// Guarda el progreso local del estudiante y sincroniza si hay sesión activa.
 
 function saveState() {
   if (studentPreviewActive) {
@@ -249,6 +272,8 @@ function saveState() {
   updateStatsUI();
 }
 
+// Actualiza el estado local con la respuesta del servidor.
+
 function applyServerProgress(progress) {
   appState.xp = progress.xp;
   appState.completedLessons = progress.completedLessons;
@@ -257,6 +282,8 @@ function applyServerProgress(progress) {
   saveState();
   renderContinuousMap();
 }
+
+// Clasifica una lección para mostrarla en el informe de progreso.
 
 function lessonReportCategory(lesson) {
   if (lesson.reportCategory) return lesson.reportCategory;
@@ -269,6 +296,8 @@ function lessonReportCategory(lesson) {
       lesson.category === 'Sílabas' || lesson.category === 'Palabras') return lesson.category;
   return null;
 }
+
+// Registra un avance de lección o minijuego en local o en la API.
 
 async function recordCompletion(type, details) {
   if (!appState.currentUser || studentPreviewActive) {
@@ -313,6 +342,8 @@ async function recordCompletion(type, details) {
   applyServerProgress(result.progress);
 }
 
+// Marca un nivel del arcade como completado y avanza al siguiente.
+
 function completeArcadeLevel(stage, gameId, level, message) {
   const completionId = `${gameId}-${level}`;
   if (stage.dataset.levelComplete === completionId) return;
@@ -335,6 +366,8 @@ function completeArcadeLevel(stage, gameId, level, message) {
   });
 }
 
+// Refresca la barra de XP y el progreso visible en la cabecera.
+
 function updateStatsUI() {
   document.getElementById('header-xp').innerText = `${appState.xp} XP`;
   document.getElementById('mobile-xp').innerText = `${appState.xp} XP`;
@@ -350,6 +383,8 @@ function updateStatsUI() {
   document.getElementById('mobile-progress-text').innerText = hasFullAccess() ? `${pct}%` : '🦉';
   document.getElementById('header-progress-text').classList.toggle('hidden', !hasFullAccess());
 }
+
+// Actualiza el estado del usuario y los botones de autenticación.
 
 function updateAuthUI() {
   const userDisplay = document.getElementById('user-name-display');
@@ -377,11 +412,14 @@ function updateAuthUI() {
   }
 }
 
+// Devuelve el nombre legible del rol del usuario.
+
 function roleLabel(role) {
   return ({ superadmin: 'Super administrador', profesor: 'Profesor', alumno: 'Alumno' })[role] || 'Usuario';
 }
 
 let progressSyncTimer = null;
+// Sincroniza el progreso del alumno en segundo plano con el servidor.
 function syncProgress() {
   if (studentPreviewActive) return;
   clearTimeout(progressSyncTimer);
@@ -410,6 +448,8 @@ function syncProgress() {
    ========================================================================== */
 let authenticationInitialized = false;
 
+// Abre el modal de acceso y deja listo el formulario.
+
 function openAuthModal() {
   if (!authenticationInitialized || appState.currentUser) return;
   playSound('pop');
@@ -417,12 +457,15 @@ function openAuthModal() {
   document.getElementById('auth-modal').classList.remove('hidden');
 }
 
+// Cierra el modal de autenticación y limpia el estado visible.
+
 function closeAuthModal() {
   playSound('pop');
   document.getElementById('auth-modal').classList.add('hidden');
 }
 
 let authMode = 'login';
+// Cambia el tipo de formulario de autenticación que se muestra.
 function setAuthMode(mode) {
   authMode = mode;
   document.getElementById('auth-modal').scrollTop = 0;
@@ -696,12 +739,16 @@ async function handlePasswordResetSubmit(event) {
   }
 }
 
+// Muestra u oculta la contraseña en un campo específico.
+
 function togglePasswordVisibility(buttonId, inputId) {
   const input = document.getElementById(inputId);
   const visible = input.type === 'password';
   input.type = visible ? 'text' : 'password';
   document.querySelector(`#${buttonId} i`).className = visible ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
 }
+
+// Valida la contraseña y devuelve el error más útil del sistema.
 
 function passwordPolicyError(password) {
   if (password.length < 10 || password.length > 128 ||
@@ -711,6 +758,8 @@ function passwordPolicyError(password) {
   }
   return '';
 }
+
+// Comprueba que los campos de registro cumplan las reglas del formulario.
 
 function validateRegistrationFields() {
   const name = document.getElementById('auth-name');
@@ -729,9 +778,13 @@ function validateRegistrationFields() {
   password.setCustomValidity(passwordPolicyError(password.value));
 }
 
+// Comprueba que la nueva contraseña cumpla la política requerida.
+
 function validatePasswordInput(input) {
   input.setCustomValidity(passwordPolicyError(input.value));
 }
+
+// Valida el modo actual del formulario de acceso antes de enviar.
 
 function validateAuthFields() {
   const identifier = document.getElementById('auth-identifier');
@@ -756,6 +809,8 @@ async function openAdminPanel() {
   modal.classList.add('flex');
   await loadAdminUsers();
 }
+
+// Cierra el panel administrativo y vuelve a la vista normal.
 
 function closeAdminPanel() {
   const modal = document.getElementById('admin-users-modal');
@@ -939,11 +994,14 @@ async function createAdminUser(event) {
    4. SÍNTESIS DE VOZ Y EFECTOS DE SONIDO
    ========================================================================== */
 let audioCtx = null;
+// Obtiene o crea el contexto de audio para sonidos de la app.
 function getAudioContext() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   if (audioCtx.state === 'suspended') audioCtx.resume();
   return audioCtx;
 }
+
+// Reproduce un efecto de audio según el tipo indicado.
 
 function playSound(type) {
   try {
@@ -951,6 +1009,7 @@ function playSound(type) {
     const now = ctx.currentTime;
 
     if (type === 'correct' || type === 'success') {
+      // Produce un arpegio suave para marcar una respuesta correcta.
       [523.25, 659.25, 783.99, 1046.50].forEach((f, idx) => {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
@@ -987,6 +1046,8 @@ function playSound(type) {
 
 let currentInstructionText = "¡Hola amiguito! Elige una lección para comenzar.";
 
+// Hace hablar al búho con una voz sintetizada y callback opcional.
+
 function owlSpeak(text, callback = null) {
   currentInstructionText = text;
   const owlText = document.getElementById('owl-speech-text');
@@ -1005,6 +1066,7 @@ function owlSpeak(text, callback = null) {
     utterance.pitch = 1.1;
 
     const voices = window.speechSynthesis.getVoices();
+    // Selecciona la voz en espanol cuando el navegador la ofrece.
     const esVoice = voices.find(v => v.lang.startsWith('es'));
     if (esVoice) utterance.voice = esVoice;
 
@@ -1015,11 +1077,17 @@ function owlSpeak(text, callback = null) {
   }
 }
 
+// Encola un texto para que el búho lo lea.
+
 function speakText(text) { owlSpeak(text); }
+
+// Lee la instrucción activa de la actividad actual cuando toca.
 
 function speakCurrentInstruction(force = false) {
   if (force || appState.voiceEnabled) owlSpeak(currentInstructionText);
 }
+
+// Activa o desactiva la lectura automática por voz.
 
 function toggleVoiceSpeech() {
   appState.voiceEnabled = !appState.voiceEnabled;
@@ -1036,6 +1104,8 @@ function toggleVoiceSpeech() {
   }
   saveState();
 }
+
+// Lanza una animación de confeti al completar una meta.
 
 function triggerConfetti() {
   const canvas = document.getElementById('confetti-canvas');
@@ -1077,9 +1147,12 @@ function triggerConfetti() {
 /* ==========================================================================
    5. NAVEGACIÓN Y RENDERIZADO DEL MAPA CONTINUO
    ========================================================================== */
+// Comprueba si el usuario puede ver funciones de profesor o administración.
 function hasFullAccess() {
   return appState.currentUser?.role === 'profesor' || appState.currentUser?.role === 'superadmin';
 }
+
+// Comprueba si el estudiante tiene permiso para jugar los minijuegos.
 
 function canAccessGames() {
   return appState.currentUser?.role === 'alumno' || hasFullAccess();
@@ -1134,6 +1207,8 @@ async function enterStudentPreview() {
   }
 }
 
+// Sale del modo vista previa de alumno y restaura el estado original.
+
 function exitStudentPreview() {
   if (!studentPreviewActive || !studentPreviewReturnState) return;
   Object.assign(appState, studentPreviewReturnState);
@@ -1146,9 +1221,13 @@ function exitStudentPreview() {
   owlSpeak('Saliste de la vista del alumno. Volviste a tu cuenta.');
 }
 
+// Calcula la siguiente lección disponible según el progreso actual.
+
 function nextLessonId() {
   return ALL_LESSONS.find(lesson => !appState.completedLessons.includes(lesson.id))?.id;
 }
+
+// Determina si una lección está disponible para el usuario actual.
 
 function canAccessLesson(lessonId) {
   if (appState.customLessons.some(lesson => lesson.id === lessonId)) return true;
@@ -1156,15 +1235,21 @@ function canAccessLesson(lessonId) {
   return nextLessonId() === lessonId;
 }
 
+// Comprueba si una lección ya fue completada por el usuario.
+
 function lessonHasBeenCompleted(lesson) {
   if (lesson.isCustom) return appState.lessonResults.some(result => result.lessonId === lesson.id && result.attempts > 0);
   return appState.completedLessons.includes(lesson.id);
 }
 
+// Verifica si un nivel del arcade está desbloqueado.
+
 function canAccessArcadeLevel(gameId, level) {
   if (hasFullAccess() || level === 1) return true;
   return appState.completedArcadeLevels.includes(`${gameId}-${level - 1}`);
 }
+
+// Cambia la pestaña activa de la interfaz principal.
 
 function switchTab(tab) {
   playSound('pop');
@@ -1198,6 +1283,8 @@ function switchTab(tab) {
     renderArcadeHub();
   }
 }
+
+// Pinta el mapa de progreso continuo con lecciones y niveles.
 
 function renderContinuousMap() {
   saveState();
@@ -1252,6 +1339,8 @@ function renderContinuousMap() {
   setTimeout(drawTrailPath, 100);
 }
 
+// Dibuja la ruta visual entre lecciones del mapa.
+
 function drawTrailPath() {
   const container = document.getElementById('map-trail-container');
   const svgPath = document.getElementById('trail-curve');
@@ -1286,6 +1375,8 @@ function drawTrailPath() {
   progressPath.setAttribute('stroke-dashoffset', `${pathLength - progressLength}`);
 }
 
+// Desplaza la vista hacia la siguiente lección disponible.
+
 function scrollToNextLesson() {
   const firstUnfinished = [...ALL_LESSONS, ...appState.customLessons].find(l => !lessonHasBeenCompleted(l));
   if (firstUnfinished) {
@@ -1301,6 +1392,7 @@ function scrollToNextLesson() {
 /* ==========================================================================
    6. REPRODUCTOR DE LECCIONES Y MINIJUEGOS INTERMEDIOS
    ========================================================================== */
+// Abre el modal de una lección y carga su contenido.
 function openLessonModal(lessonId) {
   const lesson = ALL_LESSONS.find(l => l.id === lessonId) || appState.customLessons.find(l => l.id === lessonId);
   if (!lesson) return;
@@ -1318,6 +1410,7 @@ function openLessonModal(lessonId) {
 }
 
 let lessonPreviewMode = false;
+// Reordena aleatoriamente los valores de un conjunto.
 function shuffleValues(values) {
   const shuffled = [...values];
   for (let index = shuffled.length - 1; index > 0; index--) {
@@ -1327,10 +1420,14 @@ function shuffleValues(values) {
   return shuffled;
 }
 
+// Reinicia los pasos de una lección para volver a empezar.
+
 function resetLessonStepProgress() {
   appState.modalStepComplete = [false, false, false];
   appState.modalStepItems = new Set();
 }
+
+// Marca un paso de la lección como completado o pendiente.
 
 function updateLessonStepCompletion(step, complete) {
   appState.modalStepComplete[step - 1] = complete;
@@ -1340,12 +1437,16 @@ function updateLessonStepCompletion(step, complete) {
   if (nextButton) nextButton.classList.toggle('cursor-not-allowed', !complete);
 }
 
+// Actualiza la vista del paso con su progreso y estado visual.
+
 function markLessonStepItem(step, index, total) {
   appState.modalStepItems.add(`${step}:${index}`);
   if (Array.from({ length: total }, (_, itemIndex) => appState.modalStepItems.has(`${step}:${itemIndex}`)).every(Boolean)) {
     updateLessonStepCompletion(step, true);
   }
 }
+
+// Muestra una vista previa de una lección personalizada.
 
 function openCustomLessonPreview(lesson) {
   if (!hasFullAccess() || !lesson || !Array.isArray(lesson.words) || !Array.isArray(lesson.emojis)) return;
@@ -1366,10 +1467,14 @@ function openCustomLessonPreview(lesson) {
   renderModalStep();
 }
 
+// Cierra el modal de lección y limpia el contexto actual.
+
 function closeLessonModal() {
   document.getElementById('lesson-modal').classList.add('hidden');
   lessonPreviewMode = false;
 }
+
+// Pinta el paso activo del modal según el índice actual.
 
 function renderModalStep() {
   const lesson = appState.currentModalLesson;
@@ -1515,6 +1620,8 @@ function renderModalStep() {
   body.scrollTop = 0;
 }
 
+// Avanza al siguiente paso de la lección en pantalla.
+
 function nextLessonStep() {
   if (!appState.modalStepComplete[appState.modalStep - 1]) {
     const message = 'Primero completa correctamente la actividad de este paso para poder avanzar.';
@@ -1533,9 +1640,12 @@ function nextLessonStep() {
     renderModalStep();
   }
 }
+// Vuelve al paso anterior de la lección.
 function prevLessonStep() {
   if (appState.modalStep > 1) { appState.modalStep--; renderModalStep(); }
 }
+
+// Evalúa la respuesta elegida en la lección y actualiza el feedback.
 
 function checkModalAnswer(selected, correct, btnId) {
   if (selected === correct) {
@@ -1572,6 +1682,8 @@ function checkModalAnswer(selected, correct, btnId) {
   }
 }
 
+// Abre el desafío del hito asociado a una lección.
+
 function openMilestoneGame(mId) {
   const m = ALL_LESSONS.find(l => l.id === mId);
   if (!m) return;
@@ -1601,9 +1713,13 @@ function openMilestoneGame(mId) {
   owlSpeak(`Desafío de repaso: ${m.title}. Escucha bien: ${m.target}. ¿Cuál es la respuesta correcta? Toca la opción que dice ${m.target}.`);
 }
 
+// Cierra el modal del desafío del hito.
+
 function closeMilestoneModal() {
   document.getElementById('milestone-modal').classList.add('hidden');
 }
+
+// Registra la superación de un hito y desbloquea lo siguiente.
 
 async function completeMilestone(mId) {
   const wasRepeat = appState.completedLessons.includes(mId);
@@ -1619,6 +1735,8 @@ async function completeMilestone(mId) {
     owlSpeak(error.message);
   }
 }
+
+// Comprueba si la respuesta del desafío del hito es correcta.
 
 function checkMilestoneAnswer(mId, selected) {
   const milestone = ALL_LESSONS.find(lesson => lesson.id === mId && lesson.isMilestone);
@@ -1638,6 +1756,7 @@ function checkMilestoneAnswer(mId, selected) {
 /* ==========================================================================
    7. ARCADE: HUB Y 10 MINIJUEGOS CON 3 NIVELES CADA UNO
    ========================================================================== */
+// Dibuja el centro del arcade con los minijuegos y niveles disponibles.
 function renderArcadeHub() {
   if (arcadeTransitionTimer !== null) {
     clearTimeout(arcadeTransitionTimer);
@@ -1697,6 +1816,8 @@ function renderArcadeHub() {
   renderCustomGames();
 }
 
+// Inicia un minijuego concreto y prepara su estado inicial.
+
 function launchLevel(gameId, level) {
   if (!canAccessGames()) {
     switchTab('minigames');
@@ -1739,6 +1860,7 @@ function launchLevel(gameId, level) {
    -------------------------------------------------------------------------- */
 
 // 1. Serpiente Lectora
+// Configura y ejecuta el minijuego de la serpiente.
 function runSnakeGame(stage, level) {
   const target = arcadeContent.randomLetter(level);
   const distractors = arcadeContent.randomLetters(level, 5).filter(letter => letter !== target);
@@ -1772,6 +1894,8 @@ function runSnakeGame(stage, level) {
   const foods = [];
   let foodEaten = 0, gameOver = false;
 
+  // Elige una celda aleatoria libre para una acción del juego.
+
   function randomCell() {
     let cell;
     do {
@@ -1789,6 +1913,8 @@ function runSnakeGame(stage, level) {
     if (nextDir.x === -dir.x && nextDir.y === -dir.y) return;
     dir = nextDir;
   };
+
+  // Detiene el ciclo del juego de la serpiente y limpia eventos.
 
   function stopSnake(message) {
     gameOver = true;
@@ -1862,6 +1988,7 @@ function runSnakeGame(stage, level) {
 }
 
 // 2. Ninja de Globos
+// Configura y ejecuta el minijuego del ninja.
 function runNinjaGame(stage, level) {
   const choices = arcadeContent.randomLetters(level, 4);
   const target = arcadeContent.choose(choices);
@@ -1893,6 +2020,8 @@ function runNinjaGame(stage, level) {
     let pos = -50;
     const spd = level === 1 ? 1 : level === 2 ? 1.8 : 2.5;
 
+    // Mueve la pieza o personaje del minijuego en la dirección correcta.
+
     function move() {
       pos += spd;
       b.style.bottom = `${pos}px`;
@@ -1922,6 +2051,7 @@ function runNinjaGame(stage, level) {
 }
 
 // 3. Burbujas Parlantes
+// Configura y ejecuta el minijuego de burbujas.
 function runBubblesGame(stage, level) {
   const list = arcadeContent.randomLetters(level, 5);
   const target = arcadeContent.choose(list);
@@ -1955,6 +2085,7 @@ function runBubblesGame(stage, level) {
 }
 
 // 4. Tren de Sílabas
+// Configura y ejecuta el minijuego del tren.
 function runTrainGame(stage, level) {
   const syllables = arcadeContent.randomSyllableWord(level);
   const targetWord = syllables.join('');
@@ -2010,6 +2141,7 @@ function runTrainGame(stage, level) {
 }
 
 // 5. Lluvia de Letras
+// Configura y ejecuta el minijuego de la lluvia.
 function runRainGame(stage, level) {
   stage.innerHTML = `
     <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
@@ -2049,6 +2181,7 @@ function runRainGame(stage, level) {
     drop.style.left = `${Math.random() * Math.max(0, area.clientWidth - dropWidth)}px`;
 
     let top = 0;
+    // Hace caer un objeto del juego con animación y colisiones.
     function fall() {
       if (gameWon || !drop.isConnected || !basket.isConnected) return;
       top += level === 1 ? 2 : level === 2 ? 3 : 4;
@@ -2079,6 +2212,7 @@ function runRainGame(stage, level) {
 }
 
 // 6. Torre de Bloques
+// Configura y ejecuta el minijuego de apilar piezas.
 function runStackerGame(stage, level) {
   const syllables = arcadeContent.randomSyllableWord(level);
   const targetWord = syllables.join('');
@@ -2122,6 +2256,7 @@ function runStackerGame(stage, level) {
 }
 
 // 7. El Pincel Mágico
+// Configura y ejecuta el minijuego de pintar o rellenar formas.
 function runPaintGame(stage, level) {
   const target = arcadeContent.randomLetter(level);
   stage.innerHTML = `
@@ -2174,6 +2309,7 @@ function runPaintGame(stage, level) {
 }
 
 // 8. Memoria Sonora
+// Configura y ejecuta el minijuego de memoria.
 function runMemoryGame(stage, level) {
   stage.innerHTML = `
     <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
@@ -2223,6 +2359,7 @@ function runMemoryGame(stage, level) {
 }
 
 // 9. Carrera de Sílabas (Runner)
+// Configura y ejecuta el minijuego del corredor.
 function runRunnerGame(stage, level) {
   const syllables = arcadeContent.randomSyllables(level, 3);
   stage.innerHTML = `
@@ -2252,6 +2389,8 @@ function runRunnerGame(stage, level) {
   let jumpUntil = 0, jumpTimer = null;
   owlSpeak(`Nivel ${level}. Salta para recoger las sílabas ${syllables.join(', ')} y evita los barriles.`);
 
+  // Ajusta la duración del salto del personaje en el runner.
+
   function holdJumpFor(duration) {
     jumpUntil = Math.max(jumpUntil, performance.now() + duration);
     isJumping = true;
@@ -2275,6 +2414,8 @@ function runRunnerGame(stage, level) {
     if (isJumping || gameWon) return;
     holdJumpFor(900);
   };
+
+  // Actualiza el estado del runner en cada frame del juego.
 
   function loopRunner(timestamp) {
     if (!area.isConnected || gameWon) return;
@@ -2334,6 +2475,7 @@ function runRunnerGame(stage, level) {
 }
 
 // 10. Pesca de Vocales y Sílabas
+// Configura y ejecuta el minijuego de pesca.
 function runFishingGame(stage, level) {
   const fish = arcadeContent.randomLetters(level, 5);
   const target = arcadeContent.choose(fish);

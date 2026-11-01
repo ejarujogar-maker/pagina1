@@ -1,3 +1,4 @@
+// Expone el contenido aleatorio de los minijuegos en navegador y Node.js.
 (function (root) {
   const lettersByLevel = {
     1: ['A', 'E', 'I', 'O', 'U'],
@@ -25,12 +26,14 @@
     3: ['ELEFANTE', 'MARIPOSA', 'CARAMELO', 'AVENTURA', 'COCODRILO', 'ESTRELLA', 'BICICLETA', 'CHOCOLATE']
   };
 
+  // Obtiene el conjunto de contenidos de un nivel o indica que no existe.
   function poolForLevel(pools, level) {
     const pool = pools[level];
     if (!pool) throw new RangeError(`Nivel de minijuego no válido: ${level}`);
     return pool;
   }
 
+  // Elige un elemento al azar de una lista no vacía.
   function choose(items) {
     if (!Array.isArray(items) || items.length === 0) {
       throw new TypeError('Se necesita una lista con al menos una opción.');
@@ -38,6 +41,7 @@
     return items[Math.floor(Math.random() * items.length)];
   }
 
+  // Devuelve una muestra aleatoria sin modificar la lista original.
   function sample(items, count = items.length) {
     if (!Array.isArray(items) || !Number.isInteger(count) || count < 0 || count > items.length) {
       throw new RangeError('La cantidad debe estar entre cero y el tamaño de la lista.');
@@ -51,21 +55,27 @@
   }
 
   const content = {
+    // Elige una letra permitida para el nivel.
     randomLetter(level) {
       return choose(poolForLevel(lettersByLevel, level));
     },
+    // Selecciona varias letras distintas del conjunto del nivel.
     randomLetters(level, count) {
       return sample(poolForLevel(lettersByLevel, level), count);
     },
+    // Devuelve las sílabas de una palabra elegida para el nivel.
     randomSyllableWord(level) {
       return [...choose(poolForLevel(wordSyllablesByLevel, level))];
     },
+    // Elige varias sílabas disponibles para el nivel.
     randomSyllables(level, count) {
       return sample(poolForLevel(syllablesByLevel, level), count);
     },
+    // Elige un objetivo para el minijuego de lluvia.
     randomRainTarget(level) {
       return choose(poolForLevel(rainTargetsByLevel, level));
     },
+    // Forma cuatro parejas de símbolos para el juego de memoria.
     randomMemoryCards(level) {
       const symbols = sample(poolForLevel(memorySymbolsByLevel, level), 4);
       return sample([...symbols, ...symbols]);
