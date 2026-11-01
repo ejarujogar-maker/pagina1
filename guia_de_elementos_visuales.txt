@@ -1,5 +1,5 @@
 ========================================================================
-GUÍA DE ELEMENTOS VISUALES Y UI/UX PARA MANTENER A LOS NIÑOS ENGANCHADOS
+GUÍA DE ELEMENTOS VISUALES Y UI/UX PARA MANTENER A LOS NIÑOS EN LA PAGINA
 ========================================================================
 
 Para que una plataforma web de lectura infantil mantenga la atención de los 

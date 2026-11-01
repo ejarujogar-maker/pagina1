@@ -154,32 +154,94 @@ la computadora que ejecuta la aplicacion.
 --------------------------------------------------
 
 El superadministrador y el profesor tienen acceso completo a las lecciones y
-al Arcade de minijuegos. Un visitante que no ha iniciado sesion puede avanzar
-por las lecciones en orden, pero no puede entrar al Arcade. Las cuentas de
-alumno tambien siguen el desbloqueo secuencial de las lecciones.
+al Arcade. Un visitante sin sesion puede navegar y practicar lecciones, pero el
+progreso que envia la API requiere autenticacion. El cliente muestra el Arcade
+a usuarios autenticados; sus niveles para alumnos se desbloquean en orden. Los
+controles de la pagina no sustituyen la autorizacion del servidor: este tambien
+valida la sesion, el rol, el alumno o juego relacionado y el orden del progreso.
 
 El profesor y el superadministrador pueden entrar y salir de la vista de un
 alumno desde el panel Avances. Esta vista es temporal y no guarda el progreso
-de prueba. Cada fase requiere completar correctamente su actividad antes de
-avanzar; el aviso de bloqueo tambien se reproduce por voz.
+de prueba. El backend devuelve el perfil, las lecciones, los juegos y el progreso
+del alumno seleccionado; la simulacion se ejecuta en el navegador.
 
-Los reportes muestran las estrellas ganadas en el primer intento y en los
-reintentos, junto con un ranking de las lecciones mas repetidas.
+El servidor concede a los profesores acceso global a los alumnos y reportes;
+no vincula las cuentas de alumno a un profesor concreto. El superadministrador
+puede administrar las cuentas y el contenido de todos los profesores. Los
+permisos se aplican en las rutas de la API, no solo ocultando botones.
+Actualmente, las rutas de edicion y borrado de lecciones personalizadas para
+profesores comprueban el rol, pero no limitan la operacion a las lecciones
+creadas por ese profesor. En cambio, al borrar juegos, la API si comprueba el
+profesor creador; el superadministrador puede operar globalmente. Ten en cuenta
+este alcance al administrar el servicio con varios profesores.
+
+Los reportes resumen intentos, errores, puntos, mejor resultado, estrellas de
+la primera vez y de los reintentos, porcentaje ponderado por seccion y ranking
+de lecciones mas repetidas. La vista de alumno presenta un mapa y un progreso
+visual; el detalle de reportes esta en el panel docente.
+
+Una leccion normal se presenta en tres pasos: descubrir el sonido (tocar letra
+o silabas), escuchar y clasificar ejemplos (o escuchar una lectura), y practica
+guiada con opciones. Cada paso habilita el siguiente al completar su actividad.
+Los errores reducen las estrellas hasta un minimo de cero. Las lecciones
+completadas registran intentos y resultados; el servidor asigna las recompensas
+de XP y controla el orden de las lecciones del catalogo. Los desafios de repaso
+tienen una recompensa distinta de las lecciones normales.
+
+La voz usa SpeechSynthesis del navegador en espanol y puede activarse o
+desactivarse desde la interfaz; sonidos cortos y confeti usan APIs del navegador.
+La disponibilidad y la voz concreta dependen del equipo y navegador. En las
+lecciones de lectura, el cliente habilita continuar al pulsar el boton para
+escuchar; no espera a confirmar que la locucion haya terminado.
 
 Al crear lecciones se puede elegir una subseccion para consonantes y silabas.
 Las lecciones de palabras incluyen filtros de dificultad, numero de silabas,
 posicion del sonido objetivo y estructura. El profesor y el superadministrador
 pueden editar lecciones asignadas y lecciones del catalogo.
 
+El catalogo incluye vocales, consonantes, desafios de repaso y contenido de
+lectura/segmentacion. Aparte de editar el catalogo, los docentes pueden asignar
+lecciones personalizadas a un alumno con palabras, emojis, objetivo, tema,
+filtros y posicion en el mapa. El servidor comprueba que una leccion
+personalizada que se completa esta asignada al alumno autenticado, pero no la
+coloca dentro de la secuencia del catalogo.
+
 Las palabras se ilustran seleccionando emojis en el catalogo visual, organizado
 por categorias y con buscador. Al asignar una leccion se puede elegir su posicion
 exacta en el recorrido del alumno: antes de una leccion del mapa o al final.
 
 El creador de juegos incluye rompecabezas, memoria de parejas y El puente de
-los bloques magicos. Para el puente, escribe una palabra y una silaba que este
-contenga en cada fila; el alumno escucha la palabra y puede tocar o arrastrar
-el bloque correcto hasta el puente. Una respuesta incorrecta permite intentarlo
-de nuevo.
+los bloques magicos. Al comenzar cada juego, el sistema muestra y lee en voz
+alta sus instrucciones; el boton de ayuda permite repetirlas. Las imagenes,
+palabras y tarjetas interactivas tambien pueden reproducirse por voz al
+tocarlas. Para el puente, escribe en cada fila una palabra, su imagen y una
+silaba que sea solo una parte de esa palabra. El alumno ve la palabra con ese
+fragmento oculto y la completa eligiendo o arrastrando uno de los bloques con
+silabas configuradas para el juego. Una respuesta incorrecta permite intentarlo
+de nuevo; las opciones se toman de las silabas de las palabras del propio juego.
+El servidor limita estos juegos a entre 3 y 12 elementos y no acepta que la
+silaba faltante sea la palabra completa. La prueba desde el panel docente no
+guarda resultados.
+
+La API del servidor permite a cualquier alumno autenticado consultar y
+completar niveles del Arcade; el cliente sigue mostrando las restricciones de
+nivel y secuencia previstas para alumnos. El avance de visitantes puede
+practicarse, pero no se sincroniza con la API ni queda guardado en SQLite.
+
+Nota sobre la validacion de resultados: el servidor valida la identidad, el rol,
+los identificadores, el orden y los valores declarados en la solicitud de
+finalizacion. No observa cada clic o respuesta en el navegador; una solicitud
+autenticada de finalizacion es la que registra el resultado.
+
+Las cuentas de alumno se pausan tras 60 minutos de sesion durante 15 minutos,
+para descansar la vista. El temporizador de descanso se conserva en
+sessionStorage de esa pestana. Ademas, cualquier sesion iniciada se cierra en
+el navegador tras 3 minutos sin actividad registrada (puntero, teclado,
+desplazamiento, toque, escritura, cambio de controles, foco, clic o arrastrar y
+soltar). El cliente comprueba cada 20 segundos si el servidor sigue reconociendo
+la sesion. Este cierre por inactividad de la pagina es independiente de la
+duracion de siete dias de la cookie del servidor; bloqueos, eliminaciones,
+logout y cambio de contrasena tambien pueden invalidar sesiones antes.
 
 10. INICIAR LA APLICACION E INICIAR SESION
 ------------------------------------------
@@ -211,11 +273,34 @@ progreso, codigos de verificacion, tokens de recuperacion y limites de intentos
 en registro.db dentro de la carpeta del proyecto. Las contrasenas se almacenan
 como hash scrypt con sal aleatoria, no como texto ni como contrasena cifrada.
 La base de datos esta excluida de Git. No la borres si quieres conservar los
-datos. El servidor crea y actualiza automaticamente una copia consistente en
-registro_dos.db al iniciar, despues de operaciones que modifican datos y cada
-cinco minutos. DATABASE_BACKUP_PATH permite cambiar la ubicacion de esa copia.
-Conserva ambos archivos fuera del control de versiones y conserva el volumen de
-datos al desplegar.
+datos. Las tablas principales guardan:
+
+- `users`: identidad, correo, nombre de usuario, rol, hash y sal de contrasena,
+  fecha de verificacion, borrado logico y bloqueo de acceso.
+- `sessions`: hash del token de sesion, usuario y fecha de vencimiento.
+- `progress`: XP y listas JSON de lecciones y niveles del Arcade completados.
+- `lesson_results`: intentos, errores, categoria, estrellas, mejor resultado
+  y puntos por usuario y leccion.
+- `custom_lessons` y `lesson_overrides`: contenido personalizado asignado a un
+  alumno y cambios globales sobre lecciones del catalogo.
+- `custom_games` y `custom_game_results`: juegos asignados, sus elementos y
+  intentos/resultados del alumno.
+- `email_verification_tokens`, `password_reset_tokens` y tablas de intentos y
+  solicitudes: hashes y vencimientos para verificar, recuperar y limitar
+  solicitudes de acceso/correo.
+
+Las relaciones de usuarios, sesiones, progreso, lecciones y juegos usan claves
+foraneas; los datos estructurados de listas y opciones se serializan como JSON
+en columnas de texto. `server.js` crea el esquema al arrancar y aplica
+migraciones incrementales para columnas incorporadas posteriormente.
+
+El servidor crea/actualiza una copia SQLite en `registro_dos.db` al iniciar,
+despues de respuestas exitosas a operaciones que modifican datos y cada cinco
+minutos. La copia se realiza con la API de backup de `node:sqlite`; errores se
+registran en la consola del servidor. `DATABASE_BACKUP_PATH` cambia la ruta.
+Conserva ambos archivos fuera del control de versiones y usa almacenamiento
+persistente al desplegar; una copia reciente no sustituye una estrategia de
+retencion y restauracion probada.
 
 12. PUBLICAR EN UN SERVIDOR Y USAR UNA URL PUBLICA
 --------------------------------------------------
@@ -237,9 +322,16 @@ variables SMTP. Para generar un secreto aleatorio puedes ejecutar:
 node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 
 No publiques ese secreto, las credenciales SMTP ni la contrasena del
-superadministrador. Configura TRUST_PROXY=1 solo si la aplicacion esta detras
-de exactamente un proxy inverso confiable. No expongas directamente a Internet
-el puerto interno de Node si el proxy se encarga de HTTPS.
+superadministrador. El servidor usa por defecto `TRUST_PROXY=1`; en produccion
+configuralo de acuerdo con la cantidad y topologia de proxies inversos
+realmente confiables, en vez de asumir que siempre hay uno. Un valor incorrecto
+puede hacer que el servidor interprete mal el protocolo o la IP del cliente.
+No expongas directamente a Internet el puerto interno de Node si el proxy se
+encarga de HTTPS.
+
+Node.js 22.13 o posterior es el runtime previsto por el uso de `node:sqlite` y
+`--env-file-if-exists`. `package.json` no declara una propiedad `engines`, por
+lo que npm no impone por si solo esa version minima.
 
 El volumen de la base de datos debe sobrevivir a los redepliegues. Si el
 alojamiento tiene almacenamiento efimero, configura DATABASE_PATH para apuntar
@@ -253,36 +345,74 @@ separado para tener una URL de Internet.
 13. ARQUITECTURA Y ARCHIVOS PRINCIPALES
 ---------------------------------------
 
-- index.html: estructura de la pagina, formularios, mapa, lecciones y Arcade.
-- style.css: diseno responsive, colores, tarjetas, modales y juegos.
-- script.js: interaccion del navegador, autenticacion, lecciones, audio,
-  progreso y los diez minijuegos.
-- teacher-dashboard.js: reportes, edicion y asignacion de lecciones, vista
-  temporal del alumno y gestion docente de juegos.
-- custom-games.js: juegos personalizados con instrucciones auditivas y
-  actividades de parejas, palabras y silabas.
-- emoji-catalog.js: banco de emojis y palabras sugeridas para el creador.
-- session-protection.js: cierre tras inactividad real del usuario, pausa visual
-  y comprobacion de cierre remoto de sesiones.
-- arcade-content.js: bancos de contenido por nivel y funciones de seleccion
-  aleatoria, compartidas por los minijuegos y por sus pruebas.
-- server.js: servidor Express, API, autenticacion, roles, correo y SQLite.
-- registro.db: datos privados persistentes; se crea al iniciar el servidor.
-- test/: pruebas automatizadas de servidor y contenido aleatorio.
-- package.json / package-lock.json: dependencias y comandos reproducibles.
-- .env.example: plantilla de variables de entorno. Copiala a .env; no subas
-  .env ni pegues sus valores privados en documentos o mensajes.
+- `index.html`: punto de entrada y estructura de la interfaz; contiene los
+  formularios de acceso, vistas del mapa y Arcade, aula docente y modales. Carga
+  los scripts clasicos al final del documento en un orden que establece las
+  funciones globales antes de `script.js`.
+- `style.css`: estilos y diseno adaptable para pantallas grandes y moviles,
+  mapa, modales, juegos, temas y estados de controles.
+- `script.js`: estado principal del cliente y coordinacion de autenticacion,
+  mapa, desbloqueo de contenido, lecciones, progreso, voz, efectos y los diez
+  minijuegos del Arcade.
+- `lesson-player.js`: utilidades de normalizacion/busqueda de texto y
+  presentacion de resultados. El flujo de pasos de las lecciones esta en
+  `script.js`, no en este modulo.
+- `arcade-content.js`: bancos y funciones de seleccion aleatoria por nivel
+  para el Arcade; puede usarse desde el navegador y desde las pruebas.
+- `custom-games.js`: carga y ejecucion de juegos asignados por docentes:
+  rompecabezas de palabras, memoria de parejas y puente de silabas.
+- `teacher-dashboard.js`: panel de profesor/superadministrador, seleccion de
+  alumnos, reportes, asignacion y edicion de lecciones y juegos.
+- `emoji-catalog.js`: catalogo de imagenes emoji y terminos de busqueda usados
+  al crear o editar actividades.
+- `session-protection.js`: cierre por inactividad, pausa de descanso para
+  alumnos, persistencia de ese temporizador en la pestana y comprobacion
+  periodica de que la sesion siga valida en el servidor.
+- `server.js`: servidor Express; API, sesiones, autorizacion por rol, correo,
+  persistencia SQLite, copias de seguridad y publicacion controlada de recursos.
+- `registro.db`: base de trabajo local configurada de forma predeterminada;
+  contiene datos privados y se excluye de Git.
+- `registro_dos.db`: copia de seguridad automatica configurada por defecto;
+  tambien es privada y se excluye de Git.
+- `test/server.test.js`: pruebas de integracion del servidor, autenticacion,
+  autorizacion, lecciones, juegos, progreso y datos.
+- `test/arcade-content.test.js`: pruebas de seleccion y coherencia de los
+  bancos aleatorios del Arcade.
+- `guia_de_colores_para_aprendizaje_infantil.txt` y
+  `guia_de_elementos_visuales.txt`: recomendaciones de diseno; no todas las
+  ideas de esas guias implican una funcion implementada.
+- `package.json` y `package-lock.json`: comandos npm y dependencias con
+  versiones fijadas. Las dependencias directas son Express y Nodemailer;
+  SQLite se integra con Node.js.
+- `.env.example`: plantilla de configuracion. Copiala a `.env`; nunca publiques
+  `.env`, credenciales, cookies ni bases de datos reales.
 
-El navegador carga los modulos de interfaz antes de script.js. El servidor
-publica solo los archivos de interfaz mediante rutas explicitas; el codigo del
-servidor, las pruebas, las dependencias y las bases de datos no se deben exponer.
+La arquitectura es de cliente-servidor: el navegador dibuja la experiencia y
+usa `fetch` con rutas `/api/...` para autenticacion y datos; Express valida y
+autoriza esas operaciones y SQLite conserva la informacion. Los modulos del
+cliente no son paquetes independientes: `index.html` los carga como scripts
+globales, respetando su orden de dependencias. El servidor sirve archivos
+estaticos mediante rutas previstas y responde 404 a rutas no publicadas; no
+expone directamente el directorio del proyecto.
+
+`script.js` mantiene el estado de interfaz de la sesion, el usuario, el mapa,
+el progreso, la leccion activa y el contenido personalizado. Una parte del
+estado de interfaz se guarda en `localStorage`; los datos de cuentas,
+asignaciones e informes se obtienen del servidor. La vista previa docente
+sustituye temporalmente el estado en memoria y evita guardar el progreso de
+prueba.
+
+La interfaz carga dependencias visuales externas desde CDN (Tailwind CSS,
+Font Awesome, Google Fonts y Twemoji/jsDelivr). Tambien utiliza APIs del
+navegador como SpeechSynthesis, Web Audio, canvas, drag-and-drop, temporizadores
+y `fetch`. No hay service worker ni soporte offline implementado.
 
 14. CONTENIDO ALEATORIO DEL ARCADE
 ----------------------------------
 
 El Arcade tiene diez juegos, cada uno con tres niveles: Serpiente Lectora,
 Ninja de Globos, Burbujas Parlantes, Tren de Silabas, Lluvia de Letras, Torre
-de Bloques, Pincel Magico, Memoria Sonora, Carrera de Silabas y Pesca Lectora.
+de Bloques, Pincel Magico, Memoria Sonora, Carrera de Silabas y Pesca de Vocales.
 
 Al comenzar una partida, las letras, silabas, palabras u opciones se eligen de
 bancos adecuados al nivel. Las opciones de respuesta no se repiten; la respuesta
@@ -302,36 +432,61 @@ cuatro parejas, las opciones no se repitan y los niveles invalidos se rechacen.
 
 La interfaz usa el servidor local por HTTP y JSON. Las rutas principales son:
 
-- POST /api/auth/register: crea una cuenta de alumno o profesor y envia el
-  codigo de verificacion.
-- POST /api/auth/verify-email y /api/auth/resend-verification: verifican o
-  reenvian el codigo.
-- POST /api/auth/login, GET /api/auth/me y POST /api/auth/logout: inician,
-  consultan y cierran una sesion.
-- POST /api/auth/forgot-password y /api/auth/reset-password: recuperan el
-  acceso por correo.
-- GET /api/admin/users, PATCH /api/admin/users/:id/role y
-  POST /api/admin/users, DELETE /api/admin/users/:id, POST
-  /api/admin/users/:id/restore, PATCH /api/admin/users/:id/access y DELETE
-  /api/admin/users/:id/sessions: gestionan cuentas y sesiones como
-  superadministrador.
-- GET /api/teacher/students/:id/experience: carga la vista de prueba del alumno.
-- GET /api/lessons/overrides y PUT /api/teacher/lessons/catalog/:id: leen y
-  modifican las lecciones del catalogo.
-- GET /api/progress, PUT /api/progress, POST /api/progress/reset y
-  POST /api/progress/complete: consultan y actualizan el progreso autenticado.
+- **Autenticacion:** `POST /api/auth/register`, `/verify-email`,
+  `/resend-verification`, `/login`, `/logout`, `/forgot-password` y
+  `/reset-password`; `GET /api/auth/me` consulta la sesion.
+- **Administracion (superadministrador):** `GET/POST /api/admin/users`,
+  `PATCH /api/admin/users/:id/role`, `DELETE /api/admin/users/:id`,
+  `POST /api/admin/users/:id/restore`,
+  `PATCH /api/admin/users/:id/access` y
+  `DELETE /api/admin/users/:id/sessions`.
+- **Alumnos e informes (profesor o superadministrador):**
+  `GET /api/teacher/students`, `/api/teacher/students/:id/experience` y
+  `/api/teacher/students/:id/progress`.
+- **Lecciones:** `GET /api/lessons/custom`, `/api/teacher/lessons`,
+  `/api/teacher/lesson-overrides`, `GET /api/lessons/overrides`,
+  `POST /api/teacher/lessons`, `PUT/DELETE /api/teacher/lessons/:id` y
+  `PUT /api/teacher/lessons/catalog/:id`.
+- **Juegos:** `GET /api/games/custom`, `GET/POST /api/teacher/games`,
+  `DELETE /api/teacher/games/:id` y
+  `POST /api/games/custom/:id/complete`.
+- **Progreso:** `GET/PUT /api/progress`,
+  `POST /api/progress/complete` y `/api/progress/reset`.
 
-SQLite crea tablas para users, sessions, progress, password_reset_tokens,
-email_verification_tokens y controles de intentos. El progreso de lecciones y
-niveles completados se guarda como datos JSON en progress. Las sesiones,
-tokens de correo y solicitudes se almacenan con vencimiento y se eliminan o
-invalidan segun su uso. Node.js incorpora SQLite mediante node:sqlite; no se
+Las rutas de administracion exigen rol superadministrador. Las rutas
+`/api/teacher/...` exigen profesor o superadministrador. Las rutas de progreso
+y acceso del alumno requieren sesion; el registro publico solo crea alumno o
+profesor. Las sesiones usan una cookie HttpOnly, SameSite=Lax y Secure en
+produccion; el servidor guarda un hash del token aleatorio. Su vencimiento es
+de siete dias y no se renueva en cada solicitud. Correo y contrasenas usan
+tokens con vencimiento; la recuperacion invalida las sesiones existentes.
+
+La API revisa el orden secuencial del catalogo y los niveles del Arcade para
+alumnos, y permite saltos a profesores/superadministradores. Las lecciones
+personalizadas deben pertenecer al alumno que solicita completarlas, aunque no
+se ordenan en la secuencia del catalogo. Los resultados se calculan y escriben
+en SQLite. El endpoint `PUT /api/progress` permite a una persona autenticada
+actualizar su propio XP, pero rechaza cambios enviados a listas de lecciones o
+niveles completados. El cliente comunica que una actividad fue completada; el
+servidor no valida las respuestas individuales de la interfaz.
+
+El esquema se crea en `server.js` e incluye las tablas `users`, `sessions`,
+`progress`, `lesson_results`, `custom_lessons`, `lesson_overrides`,
+`custom_games`, `custom_game_results`, `password_reset_tokens`,
+`email_verification_tokens`, `verification_requests`,
+`email_verification_attempts`, `password_reset_requests` y `login_attempts`.
+Los hashes de correo, usuario e IP empleados para limitar intentos no son
+valores de texto claro. Node.js incorpora SQLite mediante `node:sqlite`; no se
 requiere instalar un servidor de base de datos adicional.
 
 DATABASE_PATH y DATABASE_BACKUP_PATH pueden ser relativas a la carpeta del
 proyecto o rutas absolutas. Para restaurar, deten el servidor antes de
 reemplazar registro.db con una copia valida; no copies manualmente archivos
 SQLite mientras el servidor esta escribiendo.
+
+Las rutas estaticas publicadas por Express son explicitas: `/`, `/index.html`,
+`/style.css` y los scripts del frontend. Las bases de datos, `.env`, el codigo
+del servidor, `node_modules` y `test/` no se sirven como archivos publicos.
 
 16. PRUEBAS Y CAMBIOS
 ---------------------
@@ -347,11 +502,17 @@ terminar la prueba. Para revisar sintaxis del cliente:
 
 node --check script.js
 node --check arcade-content.js
+node --check lesson-player.js
+node --check custom-games.js
+node --check teacher-dashboard.js
+node --check session-protection.js
 node --check server.js
 
-Al modificar interfaz, conserva la carga de arcade-content.js antes de
-script.js y cambia el numero de version de cache en index.html para el archivo
-actualizado. No cambies package.json sin actualizar package-lock.json.
+`test/server.test.js` levanta una aplicacion con base temporal y transporte de
+correo de prueba; `test/arcade-content.test.js` verifica seleccion aleatoria y
+contenido de niveles. Al modificar interfaz, conserva el orden de scripts en
+`index.html` y cambia el parametro de version de cache del recurso actualizado.
+No cambies `package.json` sin actualizar `package-lock.json`.
 
 17. SOLUCION DE PROBLEMAS
 -------------------------
