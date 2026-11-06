@@ -1,0 +1,11 @@
+node_modules/
+.env
+.env.*
+!.env.example
+registro.db
+registro.db-shm
+registro.db-wal
+registro_dos.db
+registro_dos.db-shm
+registro_dos.db-wal
+libro-mi-jardinpdf.pdf

@@ -1,0 +1,378 @@
+LECTURACLUB - GUIA PASO A PASO
+==============================
+
+Esta guia explica como ejecutar LecturaClub en tu computadora, activar el correo,
+iniciar sesion como superadministrador y, si lo deseas, preparar el despliegue en
+un servidor. La aplicacion no se publica en Internet por el solo hecho de subir
+el codigo a GitHub.
+
+1. ABRIR LA CARPETA DEL PROYECTO
+-------------------------------
+
+Abre la carpeta donde se guardo el proyecto. En Windows, puedes abrir
+PowerShell desde la barra de direcciones del Explorador de archivos. Ejecuta
+los comandos de esta guia desde esa carpeta, donde estan package.json y
+server.js.
+
+2. COMPROBAR E INSTALAR NODE.JS
+------------------------------
+
+Ejecuta:
+
+node --version
+npm --version
+
+El proyecto requiere Node.js 22.13 o posterior porque utiliza la base de datos
+SQLite integrada en Node. Si el primer comando falla o muestra una version
+anterior, instala una version reciente de Node.js y abre una terminal nueva.
+
+3. INSTALAR DEPENDENCIAS
+------------------------
+
+En PowerShell, dentro de la carpeta del proyecto, ejecuta:
+
+npm install
+
+Esto instala las dependencias necesarias. Normalmente solo se hace la primera
+vez, o cuando cambian las dependencias del proyecto.
+
+4. PREPARAR LA CONFIGURACION LOCAL
+---------------------------------
+
+El archivo .env contiene configuracion privada y no se publica en GitHub.
+Para crearlo desde la plantilla, ejecuta:
+
+if (-not (Test-Path .env)) { Copy-Item .env.example .env } else { Write-Host "Ya existe .env; no se modifico." }
+
+Abre el archivo para editarlo:
+
+notepad .env
+
+Guarda el archivo con el nombre exacto ".env", no ".env.txt". No compartas ni
+subas ese archivo: puede contener contrasenas.
+
+La configuracion local de la aplicacion utiliza:
+
+NODE_ENV=development
+PORT=3000
+BASE_URL=http://localhost:3000
+
+La plantilla ya contiene los valores locales. No es necesario cambiar REQUEST_HASH_SECRET
+para ejecutar la aplicacion en tu computadora. Ese secreto si es obligatorio en produccion.
+
+5. CONFIGURAR EL CORREO CON GMAIL (OPCIONAL, PERO NECESARIO PARA EMAIL)
+----------------------------------------------------------------------
+
+El servidor utiliza el correo para confirmar registros y enviar enlaces de
+recuperacion de contrasena. Para empezar con poco volumen puedes configurar una
+cuenta Gmail como remitente:
+
+a. Activa la verificacion en dos pasos de la cuenta Google remitente.
+b. Crea una contrasena de aplicacion desde:
+   https://myaccount.google.com/apppasswords
+c. En .env, completa estas lineas con tu direccion de Gmail:
+
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=tu-cuenta@gmail.com
+SMTP_PASSWORD=la-contrasena-de-aplicacion-de-Google
+SMTP_FROM=tu-cuenta@gmail.com
+
+Usa una contrasena de aplicacion, no la contrasena habitual de Google. Si Google
+no muestra la opcion de generar contrasenas de aplicacion, no pongas tu
+contrasena normal: revisa los requisitos de Google o elige otro proveedor SMTP.
+Gmail tiene limites de envio y la disponibilidad depende de la cuenta.
+
+Si SMTP o BASE_URL no estan configurados correctamente, no se podran crear
+nuevas cuentas verificadas ni enviar recuperaciones por correo. Los registros
+reciben un codigo de seis digitos que caduca en 10 minutos; las solicitudes y
+los intentos estan limitados. El codigo se escribe en la pagina para activar
+la cuenta. Los enlaces para restablecer contrasenas caducan a los 30 minutos.
+Revisa tambien la carpeta de correo no deseado.
+
+La comprobacion de los registros MX del dominio ayuda a rechazar dominios sin
+servicio de correo, pero no demuestra que un buzon individual exista. Abrir el
+enlace recibido confirma que la persona puede acceder a ese buzon.
+
+6. CUENTA DE SUPERADMINISTRADOR
+-------------------------------
+
+Para crear el primer superadministrador, configura ADMIN_EMAIL y
+ADMIN_PASSWORD en .env. ADMIN_PASSWORD debe tener al menos 12 caracteres.
+ADMIN_NAME y ADMIN_USERNAME son opcionales; si no se indican, se utilizan
+valores derivados del correo. Al iniciar, el servidor crea la cuenta verificada
+si el correo no existe. Si ese correo ya pertenece a un usuario que no es
+superadministrador, el servidor no inicia: configura otro correo. Si la cuenta
+ya existe, cambiar ADMIN_PASSWORD no cambia su contrasena.
+
+Inicia sesion con el correo o el nombre de usuario y la contrasena configurada.
+El panel "Usuarios" permite listar cuentas, cambiar el rol entre profesor y
+alumno, crear cuentas, bloquear o desbloquear el acceso, cerrar sesiones,
+eliminar cuentas y restaurarlas sin perder su progreso. El panel no permite
+cambiar el rol de un superadministrador, eliminar la propia cuenta ni eliminar
+el ultimo superadministrador. Guarda las credenciales fuera del repositorio y
+no incluyas datos reales en esta guia.
+
+El registro publico solo permite crear cuentas de alumno o profesor; no permite
+registrar superadministradores.
+
+7. REGLAS DE NOMBRE Y CONTRASENA
+-------------------------------
+
+En el campo "Nombre completo" del registro solo se aceptan letras (incluidas
+letras acentuadas), espacios, apostrofes y guiones. No se aceptan numeros. El
+nombre de usuario es un campo distinto y puede contener numeros.
+
+Las contrasenas nuevas, tanto al registrarse como al restablecer una contrasena,
+deben:
+
+- Tener entre 10 y 128 caracteres.
+- Incluir al menos una letra mayuscula.
+- Incluir al menos una letra minuscula.
+- Incluir al menos un numero.
+- Incluir al menos un caracter especial, como !, *, # o @.
+
+El servidor verifica estas reglas aunque se intente enviar un formulario sin
+usar la pagina web.
+
+8. CONTRASENAS Y ACCESO DESDE OTROS DISPOSITIVOS
+------------------------------------------------
+
+Las contrasenas se guardan usando scrypt, un algoritmo de derivacion de claves:
+la base de datos almacena una sal aleatoria y un hash, no la contrasena original.
+No existe ni debe existir un sistema de desencriptacion. En cada inicio de
+sesion, el servidor deriva un hash de la contrasena que escribiste y lo compara
+con el hash guardado.
+
+Puedes iniciar sesion desde otro equipo o navegador usando la misma cuenta
+siempre que ese dispositivo se conecte a la misma aplicacion y base de datos
+del servidor. Cada navegador crea su propia sesion; no se copia automaticamente
+la sesion de un dispositivo al otro. La direccion localhost solo funciona en
+la computadora que ejecuta la aplicacion.
+
+9. ACCESO A LECCIONES Y MINIJUEGOS SEGUN LA SESION
+--------------------------------------------------
+
+El superadministrador y el profesor tienen acceso completo a las lecciones y
+al Arcade de minijuegos. Un visitante que no ha iniciado sesion puede avanzar
+por las lecciones en orden, pero no puede entrar al Arcade. Las cuentas de
+alumno tambien siguen el desbloqueo secuencial de las lecciones.
+
+El profesor y el superadministrador pueden entrar y salir de la vista de un
+alumno desde el panel Avances. Esta vista es temporal y no guarda el progreso
+de prueba. Cada fase requiere completar correctamente su actividad antes de
+avanzar; el aviso de bloqueo tambien se reproduce por voz.
+
+Los reportes muestran las estrellas ganadas en el primer intento y en los
+reintentos, junto con un ranking de las lecciones mas repetidas.
+
+Al crear lecciones se puede elegir una subseccion para consonantes y silabas.
+Las lecciones de palabras incluyen filtros de dificultad, numero de silabas,
+posicion del sonido objetivo y estructura. El profesor y el superadministrador
+pueden editar lecciones asignadas y lecciones del catalogo.
+
+Las palabras se ilustran seleccionando emojis en el catalogo visual, organizado
+por categorias y con buscador. Al asignar una leccion se puede elegir su posicion
+exacta en el recorrido del alumno: antes de una leccion del mapa o al final.
+
+El creador de juegos incluye rompecabezas, memoria de parejas y El puente de
+los bloques magicos. Para el puente, escribe una palabra y una silaba que este
+contenga en cada fila; el alumno escucha la palabra y puede tocar o arrastrar
+el bloque correcto hasta el puente. Una respuesta incorrecta permite intentarlo
+de nuevo.
+
+10. INICIAR LA APLICACION E INICIAR SESION
+------------------------------------------
+
+Desde PowerShell, dentro de la carpeta del proyecto, inicia el servidor:
+
+npm start
+
+Cuando aparezca el mensaje de que LecturaClub esta disponible, abre esta
+direccion en el navegador:
+
+http://localhost:3000
+
+No abras index.html directamente: el inicio de sesion, los datos y el progreso
+requieren el servidor en ejecucion. Para detener el servidor, vuelve a su
+ventana de PowerShell y pulsa Ctrl+C. Para iniciarlo otro dia, repite "npm
+start". Para desarrollo con reinicio automatico al editar archivos, puedes
+usar "npm run dev".
+
+Si aparece un error de puerto ocupado, puede haber otro servidor usando el
+puerto 3000. Detenlo con Ctrl+C en la terminal donde se inicio antes de volver
+a ejecutar npm start.
+
+11. BASE DE DATOS Y PROGRESO
+----------------------------
+
+La configuracion local DATABASE_PATH=registro.db guarda cuentas, sesiones,
+progreso, codigos de verificacion, tokens de recuperacion y limites de intentos
+en registro.db dentro de la carpeta del proyecto. Las contrasenas se almacenan
+como hash scrypt con sal aleatoria, no como texto ni como contrasena cifrada.
+La base de datos esta excluida de Git. No la borres si quieres conservar los
+datos. El servidor crea y actualiza automaticamente una copia consistente en
+registro_dos.db al iniciar, despues de operaciones que modifican datos y cada
+cinco minutos. DATABASE_BACKUP_PATH permite cambiar la ubicacion de esa copia.
+Conserva ambos archivos fuera del control de versiones y conserva el volumen de
+datos al desplegar.
+
+12. PUBLICAR EN UN SERVIDOR Y USAR UNA URL PUBLICA
+--------------------------------------------------
+
+La direccion http://localhost:3000 solo funciona en la computadora que ejecuta
+la aplicacion. Para que otras personas accedan por Internet, hace falta:
+
+- Un proveedor de alojamiento que ejecute Node.js 22.13 o posterior.
+- Un volumen de almacenamiento persistente para registro.db.
+- Una URL publica y un certificado HTTPS valido.
+- Un proxy inverso HTTPS, por ejemplo Caddy o Nginx, delante de Node.js.
+- Configurar las variables de entorno de produccion y las credenciales SMTP en
+  el panel seguro del proveedor de alojamiento.
+
+En produccion, configura NODE_ENV=production, BASE_URL con la URL HTTPS publica
+exacta, REQUEST_HASH_SECRET con al menos 32 caracteres aleatorios y las
+variables SMTP. Para generar un secreto aleatorio puedes ejecutar:
+
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
+
+No publiques ese secreto, las credenciales SMTP ni la contrasena del
+superadministrador. Configura TRUST_PROXY=1 solo si la aplicacion esta detras
+de exactamente un proxy inverso confiable. No expongas directamente a Internet
+el puerto interno de Node si el proxy se encarga de HTTPS.
+
+El volumen de la base de datos debe sobrevivir a los redepliegues. Si el
+alojamiento tiene almacenamiento efimero, configura DATABASE_PATH para apuntar
+a un volumen persistente. BASE_URL debe coincidir con la direccion HTTPS
+publica para que funcionen los enlaces de confirmacion y recuperacion.
+
+Subir el codigo a GitHub no crea una URL publica ni aloja la aplicacion. El
+repositorio de GitHub es privado; la aplicacion aun debe desplegarse por
+separado para tener una URL de Internet.
+
+13. ARQUITECTURA Y ARCHIVOS PRINCIPALES
+---------------------------------------
+
+- index.html: estructura de la pagina, formularios, mapa, lecciones y Arcade.
+- style.css: diseno responsive, colores, tarjetas, modales y juegos.
+- script.js: interaccion del navegador, autenticacion, lecciones, audio,
+  progreso y los diez minijuegos.
+- teacher-dashboard.js: reportes, edicion y asignacion de lecciones, vista
+  temporal del alumno y gestion docente de juegos.
+- custom-games.js: juegos personalizados con instrucciones auditivas y
+  actividades de parejas, palabras y silabas.
+- emoji-catalog.js: banco de emojis y palabras sugeridas para el creador.
+- session-protection.js: cierre tras inactividad real del usuario, pausa visual
+  y comprobacion de cierre remoto de sesiones.
+- arcade-content.js: bancos de contenido por nivel y funciones de seleccion
+  aleatoria, compartidas por los minijuegos y por sus pruebas.
+- server.js: servidor Express, API, autenticacion, roles, correo y SQLite.
+- registro.db: datos privados persistentes; se crea al iniciar el servidor.
+- test/: pruebas automatizadas de servidor y contenido aleatorio.
+- package.json / package-lock.json: dependencias y comandos reproducibles.
+- .env.example: plantilla de variables de entorno. Copiala a .env; no subas
+  .env ni pegues sus valores privados en documentos o mensajes.
+
+El navegador carga los modulos de interfaz antes de script.js. El servidor
+publica solo los archivos de interfaz mediante rutas explicitas; el codigo del
+servidor, las pruebas, las dependencias y las bases de datos no se deben exponer.
+
+14. CONTENIDO ALEATORIO DEL ARCADE
+----------------------------------
+
+El Arcade tiene diez juegos, cada uno con tres niveles: Serpiente Lectora,
+Ninja de Globos, Burbujas Parlantes, Tren de Silabas, Lluvia de Letras, Torre
+de Bloques, Pincel Magico, Memoria Sonora, Carrera de Silabas y Pesca Lectora.
+
+Al comenzar una partida, las letras, silabas, palabras u opciones se eligen de
+bancos adecuados al nivel. Las opciones de respuesta no se repiten; la respuesta
+correcta se selecciona dentro del conjunto que el juego muestra. Tren y Torre
+usan listas seleccionadas de silabas que forman palabras conocidas. Memoria
+elige cuatro contenidos y crea dos cartas de cada uno. Lluvia presenta letras,
+silabas o palabras segun el nivel. Al volver a jugar se vuelve a seleccionar
+contenido aleatorio.
+
+Para cambiar los bancos, edita arcade-content.js y conserva al menos cuatro
+opciones por grupo, las palabras correctamente segmentadas y los tres niveles.
+Despues ejecuta npm test. Los tests comprueban que las cartas siempre formen
+cuatro parejas, las opciones no se repitan y los niveles invalidos se rechacen.
+
+15. API Y DATOS
+---------------
+
+La interfaz usa el servidor local por HTTP y JSON. Las rutas principales son:
+
+- POST /api/auth/register: crea una cuenta de alumno o profesor y envia el
+  codigo de verificacion.
+- POST /api/auth/verify-email y /api/auth/resend-verification: verifican o
+  reenvian el codigo.
+- POST /api/auth/login, GET /api/auth/me y POST /api/auth/logout: inician,
+  consultan y cierran una sesion.
+- POST /api/auth/forgot-password y /api/auth/reset-password: recuperan el
+  acceso por correo.
+- GET /api/admin/users, PATCH /api/admin/users/:id/role y
+  POST /api/admin/users, DELETE /api/admin/users/:id, POST
+  /api/admin/users/:id/restore, PATCH /api/admin/users/:id/access y DELETE
+  /api/admin/users/:id/sessions: gestionan cuentas y sesiones como
+  superadministrador.
+- GET /api/teacher/students/:id/experience: carga la vista de prueba del alumno.
+- GET /api/lessons/overrides y PUT /api/teacher/lessons/catalog/:id: leen y
+  modifican las lecciones del catalogo.
+- GET /api/progress, PUT /api/progress, POST /api/progress/reset y
+  POST /api/progress/complete: consultan y actualizan el progreso autenticado.
+
+SQLite crea tablas para users, sessions, progress, password_reset_tokens,
+email_verification_tokens y controles de intentos. El progreso de lecciones y
+niveles completados se guarda como datos JSON en progress. Las sesiones,
+tokens de correo y solicitudes se almacenan con vencimiento y se eliminan o
+invalidan segun su uso. Node.js incorpora SQLite mediante node:sqlite; no se
+requiere instalar un servidor de base de datos adicional.
+
+DATABASE_PATH y DATABASE_BACKUP_PATH pueden ser relativas a la carpeta del
+proyecto o rutas absolutas. Para restaurar, deten el servidor antes de
+reemplazar registro.db con una copia valida; no copies manualmente archivos
+SQLite mientras el servidor esta escribiendo.
+
+16. PRUEBAS Y CAMBIOS
+---------------------
+
+Ejecuta todas las pruebas con:
+
+npm test
+
+Las pruebas levantan un servidor aislado con una base temporal, comprueban
+registro, verificacion por correo, inicio y cierre de sesion, permisos,
+progreso, seguridad de rutas y contenido aleatorio. Los datos se eliminan al
+terminar la prueba. Para revisar sintaxis del cliente:
+
+node --check script.js
+node --check arcade-content.js
+node --check server.js
+
+Al modificar interfaz, conserva la carga de arcade-content.js antes de
+script.js y cambia el numero de version de cache en index.html para el archivo
+actualizado. No cambies package.json sin actualizar package-lock.json.
+
+17. SOLUCION DE PROBLEMAS
+-------------------------
+
+- No abre localhost:3000: confirma que npm start sigue ejecutandose, que estas
+  abriendo la URL en la misma computadora y que el puerto no esta ocupado.
+- No permite registrar o reenviar correo: comprueba BASE_URL, SMTP_HOST,
+  SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM y la carpeta de spam; reinicia
+  el servidor despues de cambiar .env.
+- No llega el codigo: verifica el correo, espera unos minutos, revisa spam y
+  respeta los limites de solicitud; el codigo vence a los 10 minutos.
+- Una cuenta existente no acepta la contrasena del administrador: cambiar
+  ADMIN_PASSWORD solo afecta la creacion inicial; usa la recuperacion por correo.
+- No se conserva la informacion tras un redepliegue: verifica que
+  DATABASE_PATH apunta a un volumen persistente y que ese volumen sigue unido.
+- No se puede iniciar sesion en otro navegador: usa la URL del mismo servidor,
+  verifica el correo y comprueba que el hosting comparte la misma base de datos.
+- No se ejecutan pruebas: confirma Node.js 22.13 o posterior con node --version
+  y vuelve a instalar dependencias con npm install.
+
+No guardes contrasenas, claves SMTP, tokens, cookies de sesion ni copias reales
+de registro.db en Git. Para compartir el programa, comparte el codigo y una
+plantilla de configuracion vacia; prepara credenciales y una base independiente
+en el servidor de destino.

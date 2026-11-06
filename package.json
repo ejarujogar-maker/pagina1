@@ -1,0 +1,26 @@
+{
+  "name": "proyecto123",
+  "version": "1.0.0",
+  "description": "pagina web que enseña a los niños a leer de manera entretenida y didactica",
+  "homepage": "https://github.com/ejarujogar-maker/pagina1#readme",
+  "bugs": {
+    "url": "https://github.com/ejarujogar-maker/pagina1/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ejarujogar-maker/pagina1.git"
+  },
+  "license": "MIT",
+  "author": "Edixon Araujo",
+  "type": "commonjs",
+  "main": "script.js",
+  "scripts": {
+    "start": "node --env-file-if-exists=.env server.js",
+    "dev": "node --env-file-if-exists=.env --watch server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^5.3.0",
+    "nodemailer": "^10.2.1"
+  }
+}

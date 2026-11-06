@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LecturaClub - Aprende a Leer Jugando</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts: Nunito & Fredoka -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800;900;1000&display=swap" rel="stylesheet">
+
+  <!-- Enlace al archivo CSS externo -->
+  <link rel="stylesheet" href="style.css?v=14">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Nunito', 'sans-serif'],
+            fredoka: ['Fredoka', 'sans-serif']
+          },
+          colors: {
+            brand: {
+              purple: '#6C5CE7',
+              darkPurple: '#4834D4',
+              pink: '#FD79A8',
+              yellow: '#FFE156',
+              green: '#00B894',
+              orange: '#E17055',
+              blue: '#0984E3',
+              sky: '#0284c7'
+            }
+          },
+          keyframes: {
+            pop: {
+              '0%': { transform: 'scale(0.8)', opacity: '0' },
+              '70%': { transform: 'scale(1.08)' },
+              '100%': { transform: 'scale(1)', opacity: '1' }
+            },
+            floatSlow: {
+              '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+              '50%': { transform: 'translateY(-8px) rotate(2deg)' }
+            }
+          },
+          animation: {
+            pop: 'pop 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) forwards',
+            float: 'floatSlow 3s ease-in-out infinite'
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body class="font-sans text-slate-800 antialiased flex flex-col min-h-screen pb-20 md:pb-6 selection:bg-purple-200 overflow-x-hidden">
+
+  <!-- Canvas de Confeti -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- NAVEGACIÓN SUPERIOR -->
+  <header class="bg-white/95 backdrop-blur-md text-slate-800 sticky top-0 z-40 border-b-4 border-purple-200 shadow-md">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+      
+      <!-- Brand Logo -->
+      <div onclick="switchTab('map')" class="flex items-center space-x-3 cursor-pointer group">
+        <div class="bg-gradient-to-tr from-purple-600 to-pink-500 text-white w-11 h-11 rounded-2xl shadow-lg flex items-center justify-center group-hover:rotate-6 transition-transform">
+          <i class="fa-solid fa-graduation-cap text-2xl text-yellow-300"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-black font-fredoka tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 bg-clip-text text-transparent leading-none">
+            LecturaClub
+          </h1>
+          <p class="text-[10px] text-purple-600 font-extrabold uppercase tracking-widest -mt-0.5 hidden sm:block">Aprende a Leer Jugando</p>
+        </div>
+      </div>
+
+      <!-- Pestañas Principales (Desktop) -->
+      <nav class="hidden md:flex items-center space-x-2">
+        <button onclick="switchTab('map')" id="tab-btn-map" class="px-4 py-2 rounded-2xl font-black text-xs font-fredoka transition bg-purple-600 text-white shadow-md">
+          <i class="fa-solid fa-map-location-dot mr-1.5"></i> Mapa de Lecciones
+        </button>
+        <button onclick="switchTab('minigames')" id="tab-btn-minigames" class="px-4 py-2 rounded-2xl font-black text-xs font-fredoka transition text-slate-600 hover:bg-purple-100">
+          <i class="fa-solid fa-gamepad mr-1.5 text-amber-500"></i> Arcade de Minijuegos
+        </button>
+      </nav>
+
+      <!-- Barra de Progreso y XP (Desktop) -->
+      <div class="hidden lg:flex items-center space-x-4 bg-purple-50/90 px-4 py-1.5 rounded-2xl border-2 border-purple-200">
+        <div class="flex items-center space-x-2">
+        <span id="header-progress-text" class="text-xs font-black text-purple-700">Tu ruta</span>
+        <div class="w-32 bg-purple-200 rounded-full h-5 overflow-hidden p-1">
+            <div id="header-progress-bar" class="bg-gradient-to-r from-purple-600 to-pink-500 h-full rounded-full transition-all duration-500" style="width: 0%"></div>
+          </div>
+        </div>
+        <div class="h-4 w-px bg-purple-200"></div>
+        <div class="flex items-center space-x-1.5 text-emerald-600 font-black text-xs" title="Puntos XP">
+          <i class="fa-solid fa-bolt text-amber-500"></i>
+          <span id="header-xp">0 XP</span>
+        </div>
+      </div>
+
+      <!-- Control de Voz y Usuario -->
+      <div class="flex items-center space-x-2 sm:space-x-3">
+        <button onclick="toggleVoiceSpeech()" id="voice-toggle-btn" class="bouncy bg-purple-100 hover:bg-purple-200 text-purple-800 font-black px-3 py-1.5 rounded-2xl border-2 border-purple-300 text-xs flex items-center gap-1.5">
+          <i class="fa-solid fa-volume-high text-purple-600" id="voice-icon"></i>
+          <span id="voice-btn-text" class="hidden sm:inline">Voz: ON</span>
+        </button>
+
+        <button id="user-auth-btn" onclick="openAuthModal()" class="bouncy flex items-center space-x-2 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white px-3.5 py-1.5 rounded-2xl shadow border-2 border-purple-300 transition" aria-label="Abrir cuenta">
+          <div id="user-avatar" class="w-7 h-7 rounded-xl bg-amber-400 text-slate-900 font-black flex items-center justify-center text-xs shadow">
+            <i class="fa-solid fa-user" id="user-icon-state"></i>
+          </div>
+          <div class="text-left hidden sm:block">
+            <span id="user-name-display" class="text-xs font-black block leading-none">Iniciar Sesión</span>
+            <span class="text-[9px] font-bold text-amber-300 uppercase tracking-wider block">Cuenta protegida</span>
+          </div>
+        </button>
+
+        <button id="logout-btn" onclick="handleLogout()" class="hidden bouncy w-9 h-9 bg-rose-100 hover:bg-rose-200 text-rose-600 rounded-2xl border-2 border-rose-300 flex items-center justify-center text-xs font-black" title="Cerrar Sesión">
+          <i class="fa-solid fa-right-from-bracket"></i>
+        </button>
+        <button id="admin-users-btn" onclick="openAdminPanel()" class="hidden bouncy bg-amber-400 hover:bg-amber-300 text-amber-950 px-3 py-2 rounded-xl font-black text-xs" title="Administrar usuarios">
+          <i class="fa-solid fa-users-gear"></i><span class="hidden sm:inline ml-1">Usuarios</span>
+        </button>
+        <button id="teacher-dashboard-btn" onclick="openTeacherDashboard()" class="hidden bouncy bg-emerald-500 hover:bg-emerald-400 text-white px-3 py-2 rounded-xl font-black text-xs" title="Avances y lecciones">
+          <i class="fa-solid fa-chart-line"></i><span class="hidden sm:inline ml-1">Avances</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Stats Móvil -->
+    <div class="lg:hidden bg-purple-900 text-white px-4 py-1.5 flex items-center justify-between text-xs font-black">
+      <div class="flex items-center space-x-1">
+        <span class="text-purple-300">Tu ruta:</span>
+        <span id="mobile-progress-text" class="text-yellow-300" aria-label="Progreso visual">🦉</span>
+      </div>
+      <div class="flex items-center space-x-1 text-emerald-300">
+        <i class="fa-solid fa-bolt text-amber-400"></i>
+        <span id="mobile-xp">0 XP</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main class="flex-grow max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-6 space-y-8">
+
+    <!-- VISTA 1: MAPA DE LECCIONES CONTINUO -->
+    <div id="view-map" class="space-y-8">
+      
+      <!-- Mascot Banner -->
+      <div class="bg-gradient-to-r from-purple-700 via-indigo-600 to-pink-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 border-4 border-purple-200">
+        <div class="relative z-10 max-w-xl text-center sm:text-left">
+          <div class="inline-flex items-center gap-2 bg-white/20 text-yellow-300 text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-sm">
+            <span>🎓 Lectura Guiada por Voz &bull; Letras, Sílabas y Lecturas</span>
+          </div>
+          <h2 class="text-2xl sm:text-4xl font-black font-fredoka mt-2 leading-tight">
+            ¡Abecedario completo &rarr; Sílabas &rarr; Frases!
+          </h2>
+          <p id="owl-speech-text" class="mt-2 text-purple-100 text-xs sm:text-sm font-semibold leading-relaxed">
+            ¡Hola, amiguito! Soy el Búho Sabio. Vamos a aprender con lecciones mejoradas y minijuegos de 3 niveles. ¡Toca cualquier lección para comenzar!
+          </p>
+          <div class="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
+            <button onclick="speakCurrentInstruction(true)" class="bouncy bg-amber-400 hover:bg-amber-300 text-slate-900 font-black px-5 py-2.5 rounded-2xl shadow-lg border-b-4 border-amber-600 flex items-center space-x-2 text-xs font-fredoka">
+              <i class="fa-solid fa-volume-high text-lg"></i>
+              <span>🔊 Escuchar al Búho Sabio</span>
+            </button>
+            <button onclick="scrollToNextLesson()" class="bouncy bg-yellow-400 hover:bg-yellow-300 text-purple-950 font-black px-5 py-2.5 rounded-2xl shadow-lg border-b-4 border-yellow-600 text-xs flex items-center gap-2 font-fredoka">
+              <i class="fa-solid fa-compass"></i> Siguiente Lección
+            </button>
+          </div>
+        </div>
+
+        <div onclick="speakCurrentInstruction(true)" class="bouncy relative z-10 shrink-0 w-28 h-28 sm:w-36 sm:h-36 bg-amber-400 text-slate-900 rounded-full border-4 border-white flex flex-col items-center justify-center shadow-2xl cursor-pointer group">
+          <div id="mascot-home-owl" class="text-5xl sm:text-6xl text-slate-900 animate-float">🦉</div>
+          <span class="text-[10px] font-black uppercase tracking-wider bg-slate-900 text-amber-300 px-2.5 py-0.5 rounded-full mt-1 font-fredoka">Búho Sabio</span>
+        </div>
+      </div>
+
+      <!-- Contenedor del Mapa Continuo -->
+      <div class="bg-white/80 backdrop-blur-md rounded-3xl p-4 sm:p-8 shadow-xl border-4 border-purple-200 relative overflow-hidden min-h-[1600px]" id="map-trail-container">
+        <svg class="path-svg" id="svg-path-overlay">
+          <path id="trail-curve" d="" fill="none" stroke="#CBD5E1" stroke-width="12" stroke-linecap="round" stroke-dasharray="16 12" />
+          <path id="trail-progress" d="" fill="none" stroke="#10B981" stroke-width="12" stroke-linecap="round" />
+        </svg>
+
+        <div id="learning-path-nodes" class="relative z-10 space-y-10 py-4">
+          <!-- Inyectado por JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- VISTA 2: ARCADE DE MINIJUEGOS (10 JUEGOS CON 3 NIVELES) -->
+    <div id="view-minigames" class="hidden space-y-6">
+      <div class="bg-white p-5 rounded-3xl border-2 border-purple-200 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div>
+          <h2 class="text-2xl font-black font-fredoka text-purple-950 flex items-center gap-2">
+            <i class="fa-solid fa-gamepad text-amber-500"></i> Arcade de Minijuegos (3 Niveles Funcionales)
+          </h2>
+          <p class="text-xs sm:text-sm text-slate-500 font-semibold">10 minijuegos totalmente jugables, con progresión de 3 niveles de dificultad para dominar la lectura.</p>
+        </div>
+        <button onclick="speakText('Bienvenido a la zona arcade. Cada juego cuenta con tres niveles interactivos.')" class="bouncy bg-amber-400 text-slate-900 text-xs font-black px-4 py-2.5 rounded-2xl flex items-center gap-2 border-b-4 border-amber-600 shadow font-fredoka">
+          <i class="fa-solid fa-volume-high"></i> 🔊 Oír Instrucciones
+        </button>
+      </div>
+
+        <div id="custom-games-container" class="hidden rounded-3xl bg-white/90 p-4 sm:p-6 shadow-lg border-2 border-amber-200"></div>
+
+      <!-- Grid del Hub Arcade -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5" id="arcade-hub-grid">
+        <!-- Inyectado por JS -->
+      </div>
+
+      <!-- Arena de Juego Activa -->
+      <div id="arcade-play-stage" class="hidden bg-slate-900 rounded-3xl p-4 md:p-6 text-white border-4 border-purple-400 shadow-2xl relative min-h-[520px] flex flex-col justify-between overflow-hidden">
+        <!-- Escenario inyectado dinámicamente -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- NAVEGACIÓN MÓVIL INFERIOR -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t-2 border-purple-200 px-6 py-2 flex justify-around items-center shadow-2xl">
+    <button id="nav-btn-map" onclick="switchTab('map')" class="flex flex-col items-center space-y-0.5 text-purple-700 font-black">
+      <i class="fa-solid fa-map-location-dot text-xl"></i>
+      <span class="text-[10px] font-fredoka">Mapa Lecciones</span>
+    </button>
+    <button id="nav-btn-minigames" onclick="switchTab('minigames')" class="flex flex-col items-center space-y-0.5 text-slate-400 font-bold hover:text-purple-600">
+      <i class="fa-solid fa-gamepad text-xl"></i>
+      <span class="text-[10px] font-fredoka">Arcade (10)</span>
+    </button>
+  </nav>
+
+  <!-- MODAL DE AUTENTICACION -->
+  <div id="auth-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center overflow-y-auto p-3 sm:p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full max-h-[95vh] overflow-y-auto border-4 border-purple-200 animate-pop my-auto">
+      
+      <div class="bg-gradient-to-r from-purple-900 to-indigo-900 text-white p-5 flex items-center justify-between border-b border-purple-800">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-2xl bg-purple-600 flex items-center justify-center text-yellow-300 font-black text-xl shadow">
+            <i class="fa-solid fa-lock"></i>
+          </div>
+          <div>
+            <h3 id="auth-modal-title" class="font-black font-fredoka text-lg">Iniciar sesión</h3>
+            <p class="text-[10px] text-purple-300 font-bold">Acceso seguro a LecturaClub</p>
+          </div>
+        </div>
+        <button id="auth-close" onclick="closeAuthModal()" class="w-8 h-8 text-purple-300 hover:text-white rounded-xl flex items-center justify-center transition" aria-label="Cerrar">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+          <div id="auth-name-field" class="hidden">
+            <label for="auth-name" class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Nombre completo</label>
+            <input type="text" id="auth-name" minlength="8" maxlength="80" autocomplete="name" placeholder="Tu nombre" class="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 text-sm font-bold text-slate-800">
+          </div>
+          <div>
+            <label id="auth-identifier-label" for="auth-identifier" class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Correo o nombre de usuario</label>
+            <input type="text" id="auth-identifier" maxlength="254" autocomplete="username" required placeholder="Correo electrónico o usuario" class="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 text-sm font-bold text-slate-800">
+          </div>
+          <div id="auth-code-field" class="hidden">
+            <label for="auth-code" class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Código de verificación</label>
+            <input type="text" id="auth-code" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="one-time-code" placeholder="000000" class="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 text-sm font-bold tracking-[0.4em] text-slate-800">
+            <p class="mt-1 text-[11px] text-slate-500">El código enviado a tu correo vence en 10 minutos.</p>
+          </div>
+          <div id="auth-username-field" class="hidden">
+            <label for="auth-username" class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Nombre de usuario</label>
+            <input type="text" id="auth-username" minlength="4" maxlength="30" autocomplete="username" placeholder="Ej.: mateo123" class="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 text-sm font-bold text-slate-800">
+          </div>
+          <div id="auth-role-field" class="hidden">
+            <label for="auth-role" class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Tipo de cuenta</label>
+            <select id="auth-role" class="w-full px-4 py-3 rounded-2xl border-2 border-purple-200 text-sm font-bold text-slate-800">
+              <option value="alumno">Alumno</option>
+              <option value="profesor">Profesor</option>
+            </select>
+          </div>
+          <div id="auth-password-field">
+            <label for="auth-password" class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Contraseña</label>
+            <div class="relative">
+              <input type="password" id="auth-password" minlength="10" maxlength="128" autocomplete="current-password" required placeholder="Tu contraseña" class="w-full px-4 py-3 pr-12 rounded-2xl border-2 border-purple-200 text-sm font-bold text-slate-800">
+              <button type="button" id="password-eye" onclick="togglePasswordVisibility('password-eye', 'auth-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-700" aria-label="Mostrar contraseña"><i class="fa-solid fa-eye"></i></button>
+            </div>
+            <p id="password-requirements" class="text-[11px] text-slate-500">Al registrarte: mínimo 10 caracteres, con mayúscula, minúscula, número y carácter especial.</p>
+          </div>
+          <div id="auth-confirm-field" class="hidden">
+            <label for="auth-confirm-password" class="block text-[11px] font-black text-slate-500 uppercase tracking-wider mb-1">Confirmar contraseña</label>
+            <div class="relative">
+              <input type="password" id="auth-confirm-password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Repite tu contraseña" class="w-full px-4 py-3 pr-12 rounded-2xl border-2 border-purple-200 text-sm font-bold text-slate-800">
+              <button type="button" id="confirm-password-eye" onclick="togglePasswordVisibility('confirm-password-eye', 'auth-confirm-password')" class="absolute right-3 top-1/2 -translate-y-1/2 text-purple-700" aria-label="Mostrar contraseña repetida"><i class="fa-solid fa-eye"></i></button>
+            </div>
+          </div>
+          <p id="auth-message" role="status" aria-live="polite" class="min-h-5 text-xs font-bold text-rose-600"></p>
+          <button id="auth-submit" type="submit" class="bouncy w-full bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700 text-white font-black py-3.5 rounded-2xl shadow-lg border-b-4 border-purple-900 text-sm font-fredoka">
+            Iniciar sesión
+          </button>
+        </form>
+        <div id="auth-support-links" class="flex flex-wrap justify-between gap-2 text-xs font-bold">
+          <button type="button" onclick="setAuthMode('forgot')" class="text-purple-700 underline">Olvidé mi contraseña</button>
+          <button type="button" onclick="setAuthMode('resend-verification')" class="text-purple-700 underline">Reenviar verificación</button>
+          <button type="button" onclick="setAuthMode('register')" class="text-purple-700 underline">Crear una cuenta</button>
+        </div>
+        <button type="button" id="auth-back-link" onclick="setAuthMode('login')" class="hidden text-xs font-bold text-purple-700 underline">Volver a iniciar sesión</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="admin-users-modal" class="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center overflow-y-auto p-4">
+    <section class="bg-white rounded-3xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto border-4 border-amber-300 p-5 sm:p-7 my-auto">
+      <div class="flex justify-between items-center mb-4">
+        <div>
+          <h2 class="text-2xl font-black font-fredoka text-purple-950">Administrar usuarios</h2>
+          <p class="text-xs text-slate-500">Solo visible para el superadministrador.</p>
+        </div>
+        <button onclick="closeAdminPanel()" class="text-slate-500 hover:text-slate-900 p-2" aria-label="Cerrar administración"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <p id="admin-users-message" role="status" aria-live="polite" class="text-sm font-bold text-rose-600 mb-3"></p>
+      <form id="admin-create-user-form" onsubmit="createAdminUser(event)" class="mb-4 grid gap-2 rounded-2xl bg-amber-50 p-3 sm:grid-cols-6">
+        <input id="admin-create-name" required minlength="8" maxlength="80" placeholder="Nombre completo" class="rounded-xl border-2 border-amber-200 p-2 text-sm sm:col-span-2">
+        <input id="admin-create-email" required type="email" placeholder="Correo" class="rounded-xl border-2 border-amber-200 p-2 text-sm sm:col-span-2">
+        <input id="admin-create-username" required minlength="4" maxlength="30" placeholder="Usuario" class="rounded-xl border-2 border-amber-200 p-2 text-sm">
+        <select id="admin-create-role" class="rounded-xl border-2 border-amber-200 bg-white p-2 text-sm"><option value="alumno">Alumno</option><option value="profesor">Profesor</option></select>
+        <input id="admin-create-password" required type="password" minlength="10" maxlength="128" placeholder="Contraseña segura" class="rounded-xl border-2 border-amber-200 p-2 text-sm sm:col-span-3">
+        <p class="self-center text-xs text-slate-600 sm:col-span-2">10+ caracteres: mayúscula, minúscula, número y símbolo.</p>
+        <button class="rounded-xl bg-amber-500 px-4 py-2 font-black text-purple-950 sm:col-span-1">Crear cuenta</button>
+      </form>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead><tr class="border-b-2 border-purple-100 text-purple-900">
+            <th class="p-2">Usuario</th><th class="p-2">Correo</th><th class="p-2">Rol / estado</th><th class="p-2">Progreso</th><th class="p-2">Sesiones</th><th class="p-2">Acciones</th>
+          </tr></thead>
+          <tbody id="admin-users-list"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="teacher-dashboard-modal" class="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm hidden items-center justify-center overflow-y-auto p-3 sm:p-5">
+    <section class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[94vh] overflow-y-auto border-4 border-emerald-300 p-5 sm:p-7 my-auto">
+      <div class="flex justify-between items-center mb-5">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-black font-fredoka text-purple-950">Aula del Búho Sabio</h2>
+          <p class="text-sm text-slate-600">Reportes, lecciones y juegos personalizados.</p>
+        </div>
+        <button onclick="closeTeacherDashboard()" class="text-slate-500 hover:text-slate-900 p-2" aria-label="Cerrar avances"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+      <p id="teacher-dashboard-message" role="status" aria-live="polite" class="text-sm font-bold text-rose-600 mb-3"></p>
+      <label for="teacher-student-select" class="block text-sm font-black text-sky-950 mb-3">Alumno
+        <select id="teacher-student-select" onchange="onTeacherStudentChange()" class="ml-2 min-w-56 rounded-xl border-2 border-sky-200 bg-white p-3 font-bold text-slate-800">
+          <option value="">Selecciona un alumno</option>
+        </select>
+      </label>
+      <button type="button" onclick="enterStudentPreview()" class="mb-3 rounded-xl bg-emerald-100 px-4 py-2 font-black text-emerald-900">👀 Entrar a la vista del alumno</button>
+      <nav class="flex flex-wrap gap-2 border-b-2 border-purple-100 pb-3 mb-4" aria-label="Módulos docentes">
+        <button type="button" class="teacher-module-tab active" onclick="switchTeacherModule('report')">📊 Reporte</button>
+        <button type="button" class="teacher-module-tab" onclick="switchTeacherModule('lesson')">📚 Crear lección</button>
+        <button type="button" class="teacher-module-tab" onclick="switchTeacherModule('game')">🧩 Crear juego</button>
+      </nav>
+      <div id="teacher-module-report" class="teacher-module-panel">
+        <h3 id="student-report-title" class="font-black font-fredoka text-xl text-purple-950">Selecciona un alumno para ver su progreso</h3>
+        <div id="student-report-sections" class="grid sm:grid-cols-2 gap-3 mt-4"></div>
+        <div id="student-report-lessons" class="mt-5"></div>
+        <div id="student-assigned-lessons" class="mt-5"></div>
+        <div id="student-assigned-games" class="mt-5"></div>
+        <div class="mt-6 rounded-2xl border-2 border-rose-100 bg-rose-50 p-4">
+          <h4 class="font-black font-fredoka text-lg text-rose-900">Reiniciar progreso</h4>
+          <div class="mt-3 flex flex-wrap items-end gap-3">
+            <label class="text-xs font-black text-slate-600">Tipo de reinicio
+              <select id="progress-reset-scope" class="mt-1 block rounded-xl border-2 border-rose-200 bg-white p-2.5 text-sm">
+                <option value="all">Todo el progreso</option>
+                <option value="lesson">Una lección</option>
+                <option value="section">Una sección</option>
+              </select>
+            </label>
+            <label id="progress-reset-lesson-wrap" class="hidden text-xs font-black text-slate-600">Lección
+              <select id="progress-reset-lesson" class="mt-1 block min-w-48 rounded-xl border-2 border-rose-200 bg-white p-2.5 text-sm"></select>
+            </label>
+            <label id="progress-reset-section-wrap" class="hidden text-xs font-black text-slate-600">Sección
+              <select id="progress-reset-section" class="mt-1 block rounded-xl border-2 border-rose-200 bg-white p-2.5 text-sm">
+                <option>Vocales</option><option>Consonantes</option><option>Sílabas</option><option>Palabras</option>
+              </select>
+            </label>
+            <button type="button" onclick="resetStudentProgress()" class="rounded-xl bg-rose-600 px-4 py-3 font-black text-white shadow border-b-4 border-rose-800">Reiniciar seleccionado</button>
+          </div>
+        </div>
+      </div>
+      <div id="teacher-module-lesson" class="teacher-module-panel hidden">
+        <form id="custom-lesson-form" onsubmit="createCustomLesson(event)" class="max-w-3xl space-y-4 rounded-2xl border-2 border-sky-100 bg-sky-50 p-4 sm:p-6">
+          <h3 class="font-black font-fredoka text-xl text-purple-950">Diseña una lección</h3>
+          <div class="grid sm:grid-cols-2 gap-3">
+            <label class="text-xs font-black text-slate-600">Título
+              <input id="custom-lesson-title" required maxlength="80" class="mt-1 w-full rounded-xl border-2 border-purple-200 p-3 text-sm" placeholder="Ej. Palabras con M">
+            </label>
+            <label class="text-xs font-black text-slate-600">Sección
+              <select id="custom-lesson-category" required onchange="updateLessonSubcategories()" class="mt-1 w-full rounded-xl border-2 border-purple-200 bg-white p-3 text-sm">
+                <option>Vocales</option><option>Consonantes</option><option>Sílabas</option><option>Palabras</option>
+              </select>
+            </label>
+            <label class="text-xs font-black text-slate-600">Ubicación pedagógica
+              <select id="custom-lesson-subcategory" required class="mt-1 w-full rounded-xl border-2 border-purple-200 bg-white p-3 text-sm"></select>
+            </label>
+            <label class="text-xs font-black text-slate-600">Letra o sílaba objetivo
+              <input id="custom-lesson-target" required maxlength="20" class="mt-1 w-full rounded-xl border-2 border-purple-200 p-3 text-sm" placeholder="MA">
+            </label>
+            <label class="text-xs font-black text-slate-600 sm:col-span-2">Descripción / instrucción de la lección
+              <textarea id="custom-lesson-description" maxlength="500" rows="2" class="mt-1 w-full rounded-xl border-2 border-purple-200 p-3 text-sm" placeholder="Describe qué aprenderá el alumno y cómo producir el sonido."></textarea>
+            </label>
+            <label class="text-xs font-black text-slate-600">Aspecto
+              <select id="custom-lesson-theme" class="mt-1 w-full rounded-xl border-2 border-purple-200 bg-white p-3 text-sm">
+                <option value="violet">Morado mágico</option><option value="blue">Azul cielo</option><option value="green">Verde bosque</option><option value="orange">Naranja desafío</option><option value="pink">Rosa alegre</option>
+              </select>
+            </label>
+            <label class="text-xs font-black text-slate-600 sm:col-span-2">Posición en el mapa del alumno
+              <select id="custom-lesson-map-position" class="mt-1 w-full rounded-xl border-2 border-purple-200 bg-white p-3 text-sm">
+                <option value="0">Al inicio del mapa</option>
+              </select>
+            </label>
+          </div>
+          <div id="word-lesson-filters" class="hidden grid gap-3 rounded-xl bg-white p-3 sm:grid-cols-2">
+            <label class="text-xs font-black text-slate-600">Dificultad
+              <select id="lesson-filter-level" class="mt-1 w-full rounded-xl border-2 border-purple-200 bg-white p-2.5">
+                <option value="basic">Inicial</option><option value="intermediate">Intermedia</option><option value="advanced">Avanzada</option>
+              </select>
+            </label>
+            <label class="text-xs font-black text-slate-600">Cantidad de sílabas
+              <select id="lesson-filter-syllables" class="mt-1 w-full rounded-xl border-2 border-purple-200 bg-white p-2.5">
+                <option value="any">Cualquiera</option><option value="one">Una</option><option value="two">Dos</option><option value="three-plus">Tres o más</option>
+              </select>
+            </label>
+            <label class="text-xs font-black text-slate-600">Posición del sonido objetivo
+              <select id="lesson-filter-position" class="mt-1 w-full rounded-xl border-2 border-purple-200 bg-white p-2.5">
+                <option value="any">Cualquiera</option><option value="start">Inicial</option><option value="middle">Intermedia</option><option value="end">Final</option>
+              </select>
+            </label>
+            <label class="text-xs font-black text-slate-600">Estructura de palabra
+              <select id="lesson-filter-structure" class="mt-1 w-full rounded-xl border-2 border-purple-200 bg-white p-2.5">
+                <option value="any">Cualquiera</option><option value="simple">Sílabas simples</option><option value="complex">Grupos consonánticos</option><option value="mixed">Mixta</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <h4 class="font-black text-slate-700">Palabras e imágenes</h4>
+            <p class="text-xs text-slate-500">Escribe una palabra y selecciona su imagen en el catálogo visual de emojis.</p>
+            <div id="lesson-word-rows" class="mt-2 space-y-2"></div>
+            <button type="button" onclick="addTeacherWordRow('lesson-word-rows')" class="mt-2 rounded-xl bg-white px-3 py-2 text-sm font-black text-purple-700 border-2 border-purple-200">+ Añadir palabra</button>
+          </div>
+          <button id="custom-lesson-submit" class="rounded-xl bg-purple-600 px-5 py-3 font-black text-white shadow border-b-4 border-purple-800">Asignar lección</button>
+          <button id="custom-lesson-cancel-edit" type="button" onclick="cancelLessonEdit()" class="hidden rounded-xl bg-slate-200 px-5 py-3 font-black text-slate-700">Cancelar edición</button>
+        </form>
+        <div id="teacher-lesson-list" class="mt-5 max-w-3xl"></div>
+        <div id="teacher-catalog-lesson-list" class="mt-5 max-w-3xl"></div>
+      </div>
+      <div id="teacher-module-game" class="teacher-module-panel hidden">
+        <form id="custom-game-form" onsubmit="createCustomGame(event)" class="max-w-3xl space-y-4 rounded-2xl border-2 border-amber-100 bg-amber-50 p-4 sm:p-6">
+          <h3 class="font-black font-fredoka text-xl text-purple-950">Crea un juego para el alumno</h3>
+          <div class="grid sm:grid-cols-3 gap-3">
+            <label class="text-xs font-black text-slate-600">Nombre del juego
+              <input id="custom-game-title" required maxlength="80" class="mt-1 w-full rounded-xl border-2 border-amber-200 p-3 text-sm" placeholder="Rompecabezas de animales">
+            </label>
+            <label class="text-xs font-black text-slate-600">Tipo de juego
+              <select id="custom-game-type" class="mt-1 w-full rounded-xl border-2 border-amber-200 bg-white p-3 text-sm">
+                <option value="puzzle">Rompecabezas de palabras</option><option value="pairs">Memoria de parejas</option><option value="bridge">El puente de los bloques mágicos</option>
+              </select>
+            </label>
+            <label class="text-xs font-black text-slate-600">Aspecto
+              <select id="custom-game-theme" class="mt-1 w-full rounded-xl border-2 border-amber-200 bg-white p-3 text-sm">
+                <option value="orange">Naranja desafío</option><option value="violet">Morado mágico</option><option value="blue">Azul cielo</option><option value="green">Verde bosque</option><option value="pink">Rosa alegre</option>
+              </select>
+            </label>
+          </div>
+          <div>
+            <h4 id="custom-game-items-heading" class="font-black text-slate-700">Pares de palabra e imagen</h4>
+            <p id="custom-game-items-help" class="text-xs text-slate-500"></p>
+            <div id="game-word-rows" class="mt-2 space-y-2"></div>
+            <button type="button" onclick="addTeacherWordRow('game-word-rows')" class="mt-2 rounded-xl bg-white px-3 py-2 text-sm font-black text-purple-700 border-2 border-purple-200">+ Añadir pareja</button>
+          </div>
+          <button class="rounded-xl bg-amber-500 px-5 py-3 font-black text-purple-950 shadow border-b-4 border-amber-700">Crear juego</button>
+        </form>
+        <div id="teacher-game-list" class="mt-5 max-w-3xl"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="emoji-picker-modal" class="fixed inset-0 z-[100] hidden items-center justify-center bg-slate-950/70 p-3 sm:p-6" role="dialog" aria-modal="true" aria-labelledby="emoji-picker-title">
+    <section class="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border-4 border-purple-200 bg-white shadow-2xl">
+      <header class="flex items-center justify-between gap-3 border-b border-purple-100 p-4">
+        <h2 id="emoji-picker-title" class="font-fredoka text-xl font-black text-purple-950">Elige una imagen</h2>
+        <button type="button" onclick="closeEmojiPicker()" class="rounded-xl bg-purple-50 px-3 py-2 font-black text-purple-800" aria-label="Cerrar catálogo">Cerrar</button>
+      </header>
+      <div class="space-y-3 overflow-y-auto p-4">
+        <label class="block text-sm font-bold text-slate-700">Buscar emoji
+          <input id="emoji-picker-search" type="search" class="mt-1 w-full rounded-xl border-2 border-purple-200 p-3" placeholder="Ej.: gato, fruta, pelota">
+        </label>
+        <div id="emoji-picker-categories" class="flex flex-wrap gap-2" aria-label="Categorías de emojis"></div>
+        <div id="emoji-picker-results" class="grid grid-cols-4 gap-2 sm:grid-cols-6 md:grid-cols-8" role="listbox" aria-label="Emojis disponibles"></div>
+      </div>
+    </section>
+  </div>
+
+  <div id="student-preview-banner" class="fixed left-1/2 top-3 z-[80] hidden -translate-x-1/2 rounded-full bg-emerald-700 px-4 py-2 text-sm font-black text-white shadow-xl" role="status">
+    Vista alumno: <span id="student-preview-name"></span>
+    <button type="button" onclick="exitStudentPreview()" class="ml-3 underline">Salir</button>
+  </div>
+
+  <div id="reset-password-modal" class="fixed inset-0 z-[60] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-md w-full p-6 border-4 border-purple-200">
+      <h3 class="font-black font-fredoka text-xl text-purple-950 mb-3">Crear una contraseña nueva</h3>
+      <form onsubmit="handlePasswordResetSubmit(event)" class="space-y-3">
+        <label for="reset-password" class="block text-xs font-bold text-slate-600">Nueva contraseña (mínimo 10 caracteres, mayúscula, minúscula, número y carácter especial)</label>
+        <input id="reset-password" type="password" minlength="10" maxlength="128" autocomplete="new-password" required class="w-full px-4 py-3 rounded-2xl border-2 border-purple-200">
+        <button class="w-full bg-purple-600 text-white font-black py-3 rounded-2xl">Restablecer contraseña</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="student-rest-lock" class="fixed inset-0 z-[10000] hidden items-center justify-center bg-sky-950/95 p-4" role="dialog" aria-modal="true" aria-labelledby="student-rest-title" aria-describedby="student-rest-message" tabindex="-1">
+    <section class="w-full max-w-xl rounded-3xl border-4 border-emerald-400 bg-white p-7 text-center shadow-2xl sm:p-10">
+      <div class="mx-auto mb-4 grid h-24 w-24 place-items-center rounded-full bg-emerald-100 text-6xl" aria-hidden="true">🦉🌿</div>
+      <h2 id="student-rest-title" class="font-fredoka text-3xl font-black text-purple-950 sm:text-4xl">¡Hora de descansar la vista!</h2>
+      <p id="student-rest-message" class="mt-4 text-lg font-bold leading-relaxed text-slate-700">Ya llevas una hora aprendiendo en la pantalla. Sal a dar un paseo, mira a lo lejos y relaja tus ojos. La página estará en pausa durante tu descanso.</p>
+      <p class="mt-6 text-sm font-black uppercase tracking-wide text-emerald-800">Podrás continuar en</p>
+      <p id="student-rest-countdown" class="mt-1 font-fredoka text-5xl font-black tabular-nums text-emerald-600" aria-live="polite">15:00</p>
+    </section>
+  </div>
+
+  <!-- MODAL DE LECCIÓN -->
+  <div id="lesson-modal" class="fixed inset-0 z-[200] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-lg w-full overflow-hidden flex flex-col border-4 border-purple-200 animate-pop">
+      <div class="bg-purple-900 text-white px-5 py-3.5 flex items-center justify-between border-b border-purple-800">
+        <div class="flex items-center space-x-3">
+          <span id="modal-lesson-num" class="w-9 h-9 bg-purple-600 text-yellow-300 font-black text-base rounded-2xl flex items-center justify-center shadow font-fredoka">1</span>
+          <div>
+            <h3 id="modal-lesson-title" class="font-black font-fredoka text-sm sm:text-base leading-tight">Título Lección</h3>
+            <p id="modal-lesson-subtitle" class="text-[11px] text-purple-300 font-bold">Subtítulo</p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-1.5">
+          <div id="modal-dot-1" class="w-3.5 h-3.5 rounded-full bg-purple-600"></div>
+          <div id="modal-dot-2" class="w-3.5 h-3.5 rounded-full bg-slate-200"></div>
+          <div id="modal-dot-3" class="w-3.5 h-3.5 rounded-full bg-slate-200"></div>
+        </div>
+
+        <button onclick="closeLessonModal()" class="w-8 h-8 text-purple-300 hover:text-white rounded-xl flex items-center justify-center transition">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="bg-amber-300 px-4 py-2.5 flex items-center justify-between border-b-2 border-amber-400">
+        <div class="flex items-center space-x-2.5">
+          <span class="text-2xl">🦉</span>
+          <span id="mascot-speaking-bubble" class="text-xs font-black text-slate-900 truncate max-w-[200px] sm:max-w-xs">Búho Sabio habla...</span>
+        </div>
+        <button onclick="speakCurrentInstruction(true)" class="bouncy bg-slate-900 text-amber-300 font-black text-xs px-3 py-1.5 rounded-xl shadow flex items-center space-x-1.5 font-fredoka">
+          <i class="fa-solid fa-volume-high"></i>
+          <span>🔊 Repetir</span>
+        </button>
+      </div>
+
+      <div id="modal-game-area" class="p-5 sm:p-8 flex-grow overflow-y-auto flex flex-col justify-center items-center text-center bg-purple-50/40"></div>
+
+      <div class="bg-white px-5 py-3.5 border-t border-purple-100 flex items-center justify-between">
+        <button id="modal-prev-btn" onclick="prevLessonStep()" class="bouncy text-purple-700 font-extrabold px-4 py-2 bg-purple-50 rounded-xl hover:bg-purple-100 hidden text-xs">
+          <i class="fa-solid fa-chevron-left"></i> Anterior
+        </button>
+        <div id="modal-step-indicator" class="text-xs font-bold text-purple-400 uppercase tracking-wider">Paso 1 de 3</div>
+        <button id="modal-next-btn" onclick="nextLessonStep()" class="bouncy bg-green-500 hover:bg-green-600 text-white font-black px-5 py-2.5 rounded-2xl text-xs shadow border-b-4 border-green-700 flex items-center gap-1 font-fredoka ml-auto">
+          Siguiente <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE LOGRO / CELEBRACIÓN -->
+  <div id="results-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md hidden flex items-center justify-center p-4">
+    <div class="bg-white rounded-3xl shadow-2xl max-w-sm w-full p-6 text-center animate-pop relative z-20 border-4 border-purple-200">
+      <div class="w-20 h-20 bg-gradient-to-tr from-amber-400 to-yellow-300 text-white rounded-3xl flex items-center justify-center text-4xl mx-auto shadow-lg shadow-amber-500/30 mb-3 animate-float">
+        <i class="fa-solid fa-trophy"></i>
+      </div>
+      <h3 class="text-2xl font-black font-fredoka text-purple-950">¡Excelente Trabajo!</h3>
+      <p id="results-subtitle" class="text-xs text-slate-500 font-bold mt-0.5">Has completado la actividad con éxito</p>
+      <div id="results-stars" class="flex justify-center items-center space-x-2 my-5 text-3xl text-amber-400"></div>
+      <div class="bg-purple-50 p-3.5 rounded-2xl border border-purple-100 mb-5 flex justify-center items-center">
+        <div>
+          <span class="text-[10px] font-black text-slate-400 uppercase block">Recompensa</span>
+          <span id="results-xp" class="text-xl font-black text-emerald-600 font-fredoka">+100 XP</span>
+        </div>
+      </div>
+      <button onclick="closeResultsModal()" class="bouncy w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-3.5 px-6 rounded-2xl shadow-lg border-b-4 border-purple-800 text-sm font-fredoka">
+        Continuar
+      </button>
+    </div>
+  </div>
+
+  <!-- MODAL DE MINIJUEGO INTERMEDIO (CADA 5 LECCIONES) -->
+  <div id="milestone-modal" class="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-md hidden flex items-center justify-center p-3 sm:p-4">
+    <div class="bg-slate-950 text-white rounded-3xl max-w-xl w-full p-4 sm:p-6 border-4 border-amber-400 shadow-2xl flex flex-col justify-between min-h-[500px] relative overflow-hidden">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <button onclick="closeMilestoneModal()" class="bouncy bg-slate-800 text-amber-300 font-bold px-3 py-1.5 rounded-xl text-xs">
+          <i class="fa-solid fa-xmark"></i> Salir
+        </button>
+        <h3 id="milestone-title" class="text-xl font-black text-amber-300 font-fredoka">Desafío de Repaso</h3>
+        <div class="bg-amber-500 text-purple-950 font-black px-3 py-1 rounded-xl text-xs font-fredoka">¡Minijuego!</div>
+      </div>
+      <div id="milestone-stage-area" class="my-auto relative min-h-[350px] flex items-center justify-center"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-purple-100 py-4 text-center text-xs text-purple-400 font-bold mt-auto">
+    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <span>LecturaClub &copy; 2026 - Plataforma Educativa Interactiva Infantil</span>
+      <div class="flex items-center space-x-3">
+        <span id="progress-sync-status" class="text-purple-600"><i class="fa-solid fa-floppy-disk mr-1"></i> Progreso guardado en la cuenta</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Archivo de Script JS Externo -->
+  <script src="arcade-content.js?v=1"></script>
+  <script src="emoji-catalog.js?v=3"></script>
+  <script src="lesson-player.js?v=2"></script>
+  <script src="custom-games.js?v=6"></script>
+  <script src="teacher-dashboard.js?v=8"></script>
+  <script src="session-protection.js?v=3"></script>
+  <script src="script.js?v=13"></script>
+</body>
+</html>

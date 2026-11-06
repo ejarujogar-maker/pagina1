@@ -1,0 +1,73 @@
+========================================================================
+GUÍA DE ELEMENTOS VISUALES Y UI/UX PARA MANTENER A LOS NIÑOS ENGANCHADOS
+========================================================================
+
+Para que una plataforma web de lectura infantil mantenga la atención de los 
+niños y los motive a seguir aprendiendo sin cansarse, la interfaz debe combinar 
+psicología visual infantil, diseño táctil y mecánicas de videojuegos.
+
+------------------------------------------------------------------------
+1. PERSONAJES CON PERSONALIDAD (EL BÚHO GUÍA)
+------------------------------------------------------------------------
+* Compañero Animado con Expresiones:
+  - El búho no debe ser una imagen fija. Debe reaccionar al rendimiento del niño.
+  - Expresiones clave: Alegría/festejo al acertar, carita de apoyo/ánimo al 
+    fallar, y animación de parpadeo o saludo cuando está en espera.
+
+* Guía mediante Cómics y Globos de Texto:
+  - Sustituir instrucciones largas por globos de texto (bocadillos de historieta).
+  - Usar frases muy cortas, tipografía redondeada y fuentes grandes.
+
+------------------------------------------------------------------------
+2. MAPA DE AVENTURA Y NAVEGACIÓN TÁCTIL
+------------------------------------------------------------------------
+* Mapa de Ruta Estilo "Camino del Tesoro":
+  - La pantalla principal debe visualizarse como un sendero con islas, paradas 
+    o fichas de camino.
+  - El búho debe posarse sobre el nodo o nivel actual por resolver.
+  - El camino recorrido debe marcarse de forma clara (cambio de color o trazado).
+
+* Iconos y Botones Táctiles ("Golosinas Visuales"):
+  - Botones y tarjetas con bordes muy redondeados y sombras suaves (efecto 3D).
+  - Colores llamativos (naranja cálido `#F59E0B`, morado `#6D28D9`, azul cielo).
+  - Reacción al contacto: Al pasar el cursor o presionar, el botón debe 
+    agrandarse ligeramente o simular que se hunde para dar sensación de juguete.
+
+------------------------------------------------------------------------
+3. RECOMPENSAS VISUALES INMEDIATAS (DOPAMINA VISUAL)
+------------------------------------------------------------------------
+* Lluvia de Estrellas y Efectos Festivos:
+  - Al completar un ejercicio, la pantalla debe lanzar una animación de estrellas 
+    doradas, confeti o destellos de colores.
+
+* Retroalimentación Positiva e Inmediata:
+  - Al acertar una letra o palabra, la tarjeta debe realizar un pequeño brinco, 
+    giro o cambio a color verde manzana (#4CAF50).
+
+------------------------------------------------------------------------
+4. BARRA DE PROGRESO Y TIPOGRAFÍA INFANTIL
+------------------------------------------------------------------------
+* Barra de Progreso Visual (SIN PORCENTAJES):
+  - Una barra grande en la parte superior que se llene como un "tanque de energía" 
+    o tubo de líquido colorido a medida que el niño responde bien.
+  - Evitar números y el símbolo de porcentaje (%) para no generar estrés.
+
+* Tipografía Gigante y Legible:
+  - Las vocales, consonantes, sílabas y palabras deben tener un tamaño de fuente 
+    destacado frente a los adorno.
+  - Usar fuentes tipográficas infantiles, de trazo limpio y bordes suaves 
+    (ejemplo: Comic Neue, Fredoka, Nunito, OpenDyslexic).
+
+------------------------------------------------------------------------
+5. ELEMENTOS DE SORPRESA Y DESBLOQUEABLES
+------------------------------------------------------------------------
+* Coleccionables y Pegatinas (Stickers):
+  - Crear una sección de "Álbum de Pegatinas" o cofre donde los niños reciban 
+    recompensas por completar módulos.
+  - Accesorios para el búho: Permitir que el niño personalice su búho con gorros, 
+    gafas u otros accesorios al acumular estrellas.
+
+* Fondos Ilustrados y Amigables:
+  - Fondos de pantalla con paisajes suaves (bosque amigable, cielo brillante) 
+    en tonos pastel para que la interfaz se sienta acogedora y divertida.
+========================================================================
