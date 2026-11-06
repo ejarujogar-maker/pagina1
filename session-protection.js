@@ -1,5 +1,6 @@
-const SESSION_IDLE_LIMIT_MS = 3 * 60 * 1000;
-const STUDENT_SESSION_LIMIT_MS = 60 * 60 * 1000;
+// Determina el tiempo de inactividad antes de cerrar la sesión y el tiempo máximo de sesión del alumno antes de forzar un descanso.
+const SESSION_IDLE_LIMIT_MS = 5 * 60 * 1000;
+const STUDENT_SESSION_LIMIT_MS = 90 * 60 * 1000;
 const STUDENT_BREAK_LIMIT_MS = 15 * 60 * 1000;
 const STUDENT_SESSION_STORAGE_PREFIX = 'lecturaclub_student_session_';
 
@@ -13,7 +14,7 @@ let studentBreakVisible = false;
 let sessionRemoteCheckInterval = null;
 let sessionRemoteCheckPending = false;
 
-// Recupera la sesi?n del alumno desde sessionStorage con validaci?n b?sica.
+// Recupera la sesión del alumno desde sessionStorage con validación básica.
 function readStudentSession(key) {
   try {
     const stored = JSON.parse(sessionStorage.getItem(key) || 'null');
@@ -27,7 +28,7 @@ function readStudentSession(key) {
   return { startedAt: Date.now(), breakUntil: null };
 }
 
-// Guarda la sesi?n activa del estudiante para restaurarla al recargar la p?gina.
+// Guarda la sesión activa del estudiante para restaurarla al recargar la página.
 function saveStudentSession() {
   if (!activeStudentSessionKey || !activeStudentSession) return;
   try {
@@ -75,24 +76,10 @@ function beginStudentBreak(now) {
   updateRestLockCountdown(now);
 }
 
-// Comprueba si la sesi?n expir? o si debe activar el bloqueo del descanso del alumno.
+// Comprueba si la sesión expiró o si debe activar el bloqueo del descanso del alumno.
 function checkSessionProtection() {
   if (!appState.currentUser) return;
   const now = Date.now();
-  if (appState.currentUser.role === 'alumno' && activeStudentSession) {
-    if (activeStudentSession.breakUntil) {
-      if (activeStudentSession.breakUntil > now) {
-        setRestLockVisible(true);
-        updateRestLockCountdown(now);
-        return;
-      }
-      activeStudentSession = { startedAt: now, breakUntil: null };
-      saveStudentSession();
-      sessionProtectionActivityAt = now;
-      setRestLockVisible(false);
-    }
-  }
-  if (studentBreakVisible) return;
   if (now - sessionProtectionActivityAt >= SESSION_IDLE_LIMIT_MS) {
     if (sessionProtectionLogoutPending || now < sessionProtectionRetryAt) return;
     sessionProtectionLogoutPending = true;
@@ -104,21 +91,28 @@ function checkSessionProtection() {
   }
   if (appState.currentUser.role === 'alumno' && activeStudentSession &&
       now - activeStudentSession.startedAt >= STUDENT_SESSION_LIMIT_MS) {
-    beginStudentBreak(now);
+    if (sessionProtectionLogoutPending) return;
+    sessionProtectionLogoutPending = true;
+    handleLogout('student-limit').then(() => {
+      sessionProtectionLogoutPending = false;
+    });
   }
 }
 
-// Consulta el estado remoto de la sesi?n para cerrar la sesi?n si fue invalidada.
+// Consulta el estado remoto de la sesión para cerrar la sesión si fue invalidada.
 async function checkRemoteSession() {
   if (!appState.currentUser || sessionRemoteCheckPending) return;
   sessionRemoteCheckPending = true;
   try {
     const response = await fetch('/api/auth/me');
+    if (response.status === 401 || response.status === 403) {
+      await handleLogout('remote');
+      return;
+    }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
     if (!result.user || result.user.id !== appState.currentUser.id) {
-      const loggedOut = await handleLogout('remote');
-      if (loggedOut) owlSpeak('Tu sesión fue cerrada por el administrador o venció. Inicia sesión para continuar.');
+      await handleLogout('remote');
     }
   } catch (error) {
     console.error('No se pudo comprobar el estado remoto de la sesión:', error);
@@ -127,7 +121,7 @@ async function checkRemoteSession() {
   }
 }
 
-// Configura los temporizadores de inactividad y descanso al iniciar sesi?n o cambiar de usuario.
+// Configura los temporizadores de inactividad y descanso al iniciar sesión o cambiar de usuario.
 function initializeSessionProtection() {
   clearInterval(sessionProtectionInterval);
   sessionProtectionInterval = null;
@@ -150,19 +144,26 @@ function initializeSessionProtection() {
   checkSessionProtection();
 }
 
-// Detiene todos los temporizadores cuando el usuario cierra sesi?n o cambia de contexto.
+// Detiene todos los temporizadores cuando el usuario cierra sesión o cambia de contexto.
 function stopSessionProtection() {
   clearInterval(sessionProtectionInterval);
   clearInterval(sessionRemoteCheckInterval);
   sessionProtectionInterval = null;
   sessionRemoteCheckInterval = null;
+  if (activeStudentSessionKey) {
+    try {
+      sessionStorage.removeItem(activeStudentSessionKey);
+    } catch (error) {
+      console.error('No se pudo limpiar el temporizador del alumno:', error);
+    }
+  }
   activeStudentSessionKey = null;
   activeStudentSession = null;
   sessionProtectionLogoutPending = false;
   setRestLockVisible(false);
 }
 
-// Reinicia el contador de inactividad cuando detecta interacci?n del usuario.
+// Reinicia el contador de inactividad cuando detecta interacción del usuario.
 function recordSessionActivity() {
   if (!appState.currentUser || studentBreakVisible) return;
   sessionProtectionActivityAt = Date.now();
@@ -176,7 +177,7 @@ function recordSessionActivity() {
   }, { passive: true });
 });
 
-// Vuelve a validar la sesi?n cuando la pesta?a vuelve a estar visible.
+// Vuelve a validar la sesión cuando la pestaña vuelve a estar visible.
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden) checkSessionProtection();
 });

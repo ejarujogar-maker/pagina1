@@ -155,10 +155,24 @@ function closeTeacherDashboard() {
   modal.classList.remove('flex');
 }
 
+function setTeacherCreationAvailability(studentId) {
+  const enabled = Boolean(studentId);
+  const notice = document.getElementById('teacher-student-required');
+  if (notice) notice.classList.toggle('hidden', enabled);
+  ['custom-lesson-form', 'custom-game-form'].forEach(formId => {
+    const form = document.getElementById(formId);
+    if (!form) return;
+    form.querySelectorAll('input, select, textarea, button').forEach(control => {
+      control.disabled = !enabled;
+    });
+  });
+}
+
 // Recarga los reportes cuando cambia el alumno seleccionado.
 
 async function onTeacherStudentChange() {
   const studentId = document.getElementById('teacher-student-select').value;
+  setTeacherCreationAvailability(studentId);
   const reportTitle = document.getElementById('student-report-title');
   document.getElementById('student-report-sections').replaceChildren();
   document.getElementById('student-report-lessons').replaceChildren();
@@ -166,6 +180,13 @@ async function onTeacherStudentChange() {
   if (!studentId) {
     reportTitle.innerText = 'Selecciona un alumno para ver su progreso';
     document.getElementById('progress-reset-lesson').replaceChildren();
+    if (editingCustomLessonId || editingCatalogLessonId) {
+      editingCustomLessonId = null;
+      editingCatalogLessonId = null;
+      document.getElementById('custom-lesson-form').reset();
+      document.getElementById('custom-lesson-submit').textContent = 'Asignar lección';
+      document.getElementById('custom-lesson-cancel-edit').classList.add('hidden');
+    }
     await Promise.all([loadTeacherLessons(), loadTeacherGames(), refreshMapPositionOptions()]);
     return;
   }
@@ -413,8 +434,17 @@ async function loadTeacherLessons() {
   heading.className = 'font-black font-fredoka text-lg text-purple-950 mb-2';
   heading.textContent = 'Lecciones creadas';
   container.append(heading);
+  const studentId = document.getElementById('teacher-student-select').value;
+  if (!studentId) {
+    const empty = document.createElement('p');
+    empty.className = 'text-sm font-bold text-slate-500';
+    empty.textContent = 'Selecciona un alumno para consultar sus lecciones asignadas.';
+    container.append(empty);
+    await loadTeacherCatalogLessons();
+    return;
+  }
   try {
-    const response = await fetch('/api/teacher/lessons');
+    const response = await fetch(`/api/teacher/lessons?studentId=${encodeURIComponent(studentId)}`);
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'No se pudieron cargar las lecciones creadas.');
     if (!result.lessons.length) {
@@ -466,6 +496,13 @@ async function loadTeacherLessons() {
 async function loadTeacherCatalogLessons() {
   const container = document.getElementById('teacher-catalog-lesson-list');
   container.replaceChildren();
+  if (!document.getElementById('teacher-student-select').value) {
+    const notice = document.createElement('p');
+    notice.className = 'text-sm font-bold text-slate-500';
+    notice.textContent = 'Selecciona un alumno para consultar o modificar el catálogo de lecciones.';
+    container.append(notice);
+    return;
+  }
   const heading = document.createElement('h4');
   heading.className = 'mb-2 font-black font-fredoka text-lg text-purple-950';
   heading.textContent = 'Lecciones del catálogo';
@@ -592,7 +629,7 @@ async function deleteTeacherContent(type, id, title, refresh) {
 async function createCustomLesson(event) {
   event.preventDefault();
   const studentId = document.getElementById('teacher-student-select').value;
-  if (!editingCatalogLessonId && !studentId) {
+  if (!studentId) {
     document.getElementById('teacher-dashboard-message').innerText = 'Selecciona un alumno antes de asignar la lección.';
     return;
   }

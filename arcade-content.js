@@ -2,18 +2,23 @@
 (function (root) {
   const lettersByLevel = {
     1: ['A', 'E', 'I', 'O', 'U'],
-    2: ['M', 'P', 'L', 'N', 'T', 'B', 'D', 'F'],
-    3: ['S', 'R', 'C', 'G', 'J', 'V', 'Z', 'Ñ']
+    2: ['M', 'P', 'L', 'N', 'T', 'B', 'D', 'F', 'S', 'R', 'C', 'G'],
+    3: ['S', 'R', 'C', 'G', 'J', 'V', 'Z', 'Ñ', 'K', 'Q', 'H', 'Y']
   };
   const syllablesByLevel = {
-    1: ['MA', 'ME', 'MI', 'MO', 'MU', 'PA', 'PE', 'PI', 'PO', 'PU'],
-    2: ['CA', 'CE', 'CI', 'CO', 'CU', 'LA', 'LE', 'LI', 'LO', 'LU', 'SA', 'SE', 'SI', 'SO', 'SU'],
-    3: ['BRA', 'BRE', 'BRI', 'BRO', 'BRU', 'PLA', 'PLE', 'PLI', 'PLO', 'PLU', 'TRA', 'TRE', 'TRI', 'TRO', 'TRU']
+    1: ['MA', 'ME', 'MI', 'MO', 'MU', 'PA', 'PE', 'PI', 'PO', 'PU', 'LA', 'LE', 'LI', 'LO', 'LU'],
+    2: ['CA', 'CE', 'CI', 'CO', 'CU', 'LA', 'LE', 'LI', 'LO', 'LU', 'SA', 'SE', 'SI', 'SO', 'SU',
+      'TA', 'TE', 'TI', 'TO', 'TU', 'NA', 'NE', 'NI', 'NO', 'NU', 'DA', 'DE', 'DI', 'DO', 'DU'],
+    3: ['BRA', 'BRE', 'BRI', 'BRO', 'BRU', 'PLA', 'PLE', 'PLI', 'PLO', 'PLU', 'TRA', 'TRE', 'TRI', 'TRO', 'TRU',
+      'CLA', 'CLE', 'CLI', 'CLO', 'CLU', 'GRA', 'GRE', 'GRI', 'GRO', 'GRU']
   };
   const wordSyllablesByLevel = {
-    1: [['CA', 'SA'], ['ME', 'SA'], ['PA', 'TO'], ['LU', 'NA'], ['PE', 'LO', 'TA'], ['MA', 'NO']],
-    2: [['MA', 'RI', 'PO', 'SA'], ['TE', 'LE', 'FO', 'NO'], ['CA', 'MI', 'SE', 'TA'], ['ES', 'TRE', 'LLA'], ['CO', 'NE', 'JO']],
-    3: [['A', 'VEN', 'TU', 'RA'], ['CA', 'RA', 'ME', 'LO'], ['CO', 'CO', 'DRI', 'LO'], ['BI', 'CI', 'CLE', 'TA'], ['CHO', 'CO', 'LA', 'TE']]
+    1: [['CA', 'SA'], ['ME', 'SA'], ['PA', 'TO'], ['LU', 'NA'], ['PE', 'LO', 'TA'], ['MA', 'NO'],
+      ['MA', 'PA'], ['PA', 'LA'], ['LO', 'MA']],
+    2: [['MA', 'RI', 'PO', 'SA'], ['TE', 'LE', 'FO', 'NO'], ['CA', 'MI', 'SE', 'TA'], ['ES', 'TRE', 'LLA'], ['CO', 'NE', 'JO'],
+      ['TO', 'MA', 'TE'], ['DA', 'DO'], ['NA', 'RI', 'Z'], ['TA', 'ZA']],
+    3: [['A', 'VEN', 'TU', 'RA'], ['CA', 'RA', 'ME', 'LO'], ['CO', 'CO', 'DRI', 'LO'], ['BI', 'CI', 'CLE', 'TA'], ['CHO', 'CO', 'LA', 'TE'],
+      ['PLA', 'NE', 'TA'], ['BRO', 'CHA'], ['GRA', 'NE', 'RO']]
   };
   const rainTargetsByLevel = {
     1: lettersByLevel[1],

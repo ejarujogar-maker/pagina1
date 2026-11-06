@@ -1,0 +1,80 @@
+================================================================================
+          RUTA DE APRENDIZAJE DE LECTURA (METODOLOGÍA SINTÉTICA-FONÉTICA)
+================================================================================
+
+ETAPA 1: CONCIENCIA FONOLÓGICA Y PRELECTURA (Base Fundamental)
+--------------------------------------------------------------------------------
+Objetivo: Preparar el oído y la memoria auditiva antes de introducir las letras.
+- Reconocimiento de sonidos del entorno y ritmos.
+- Identificación de rimas y aliteraciones (ej: "canción", "avión").
+- Segmentación silábica oral (aplaudir por cada sílaba de una palabra).
+- Identificación del sonido inicial y final de las palabras habladas.
+
+ETAPA 2: LAS VOCALES (Fundamento de la Lectura)
+--------------------------------------------------------------------------------
+Objetivo: Asociar el grafema (letra escrita) con su fonema (sonido).
+- Vocales abiertas: A, E, O.
+- Vocales cerradas: I, U.
+- Diptongos básicos: ai, au, ei, eo, ia, ie, io, ue, ua.
+- Dinámica: Lectura visual de vocales combinadas (ej: "a-e-i", "i-a-o").
+
+ETAPA 3: CONSONANTES DIRECTAS SIMPLES (Nivel 1 - Sílabas M, P, L, S)
+--------------------------------------------------------------------------------
+Objetivo: Introducir el concepto de fusión silábica (Consonante + Vocal).
+- Letra M: ma, me, mi, mo, mu -> Primeras palabras: mamá, mimo, ama.
+- Letra P: pa, pe, pi, po, pu -> Palabras: papá, pipa, mapa, puma.
+- Letra L: la, le, li, lo, lu -> Palabras: ala, lola, lima, palo.
+- Letra S: sa, se, si, so, su -> Palabras: oso, mesa, sopa, suma.
+- Primeras Oraciones: "Mi mamá me ama", "Papá ama a mamá", "Ese oso pasea".
+
+ETAPA 4: CONSONANTES DIRECTAS INTERMEDIAS (Nivel 2 - Sílabas T, N, D, B, V)
+--------------------------------------------------------------------------------
+Objetivo: Expandir el vocabulario con nuevas consonantes de sonido claro.
+- Letra T: ta, te, ti, to, tu -> Palabras: tomate, pelota, pata, pito.
+- Letra N: na, ne, ni, no, nu -> Palabras: nena, mano, pino, una.
+- Letra D: da, de, di, do, du -> Palabras: dado, dedo, duda, moda.
+- Letras B / V: ba, be, bi, bo, bu / va, ve, vi, vo, vu.
+- Oraciones Acumulativas: "Toma la pelota", "La nena pasea sola", "Me duele el dedo".
+
+ETAPA 5: CONSONANTES CON VARIACIÓN Y COMPLEJIDAD (Nivel 3 - C, K, Q, R, Z, F, J)
+--------------------------------------------------------------------------------
+Objetivo: Dominar fonemas con reglas ortográficas o variaciones de sonido.
+- Sonido duro de la C / K / Q:
+  * ca, co, cu (Casa, copa, cuna).
+  * que, qui (Queso, quijote).
+  * ka, ke, ki, ko, ku (Koala).
+- Sonido de la R / RR:
+  * R suave en medio de palabra (cara, loro).
+  * R fuerte al inicio o RR (rosa, perro).
+- Sonido de F y J/G suave:
+  * fa, fe, fi, fo, fu / ja, je, ji, jo, ju.
+
+ETAPA 6: SÍLABAS COMPLEJAS Y TRABADAS (Refuerzos Específicos)
+--------------------------------------------------------------------------------
+Objetivo: Resolver las dificultades fonéticas más comunes registradas por psicopedagogos.
+- Diferenciación C/G con E e I:
+  * ce, ci (Cena, cine - sonido suave).
+  * ga, go, gu (Gato, gota, gusano).
+  * gue, gui (Guerra, guiso - U muda).
+  * ge, gi (Gente, gigante - sonido fuerte tipo J).
+- Sílabas Inversas (Vocal + Consonante):
+  * al, el, il, ol, ul (Alto, elfo).
+  * as, es, is, os, us (Isla, ostra).
+  * an, en, in, on, un (Antena, indio).
+- Sílabas Trabadas (Consonante + L/R + Vocal):
+  * Grupo L: bla, cla, fla, gla, pla.
+  * Grupo R: bra, cra, dra, fra, gra, pra, tra.
+
+ETAPA 7: LECTURA CONTEXTUAL Y FLUIDEZ (Oraciones Cortas y Textos)
+--------------------------------------------------------------------------------
+Objetivo: Pasar del deletreo mecánico a la comprensión lectora fluida.
+- Lectura de oraciones acumulativas con palabras ya conocidas.
+- Comprensión de textos cortos de 2 a 3 líneas con preguntas directas.
+- Introducción a los signos de puntuación (Punto ., Coma ,, Signos de interrogación ¿?).
+
+================================================================================
+NOTAS PEDAGÓGICAS PARA EL DESARROLLO Y GAMIFICACIÓN:
+- Refuerzo Visual y Animación: Cada logro silábico debe acompañarse de animaciones divertidas.
+- Gamificación: No avanzar de etapa sin haber desbloqueado las lecciones precedentes.
+- Adaptabilidad: Priorizar refuerzos en las letras E, Q, C, S, K y combinaciones CE/CI/GE/GI.
+================================================================================

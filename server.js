@@ -5,6 +5,7 @@ const path = require('node:path');
 const { DatabaseSync, backup } = require('node:sqlite');
 const express = require('express');
 const nodemailer = require('nodemailer');
+const pedagogicalContent = require('./pedagogical-content');
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -32,15 +33,11 @@ const identifierPattern = /^[a-zA-Z0-9_.-]{4,30}$/;
 const namePattern = /^[\p{L}\p{M}]+(?:[ '\u2019-][\p{L}\p{M}]+)*$/u;
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const validRoles = new Set(['alumno', 'profesor']);
-const lessonSequence = [
-  ...Array.from({ length: 5 }, (_, index) => `l${index + 1}`), 'm1',
-  ...Array.from({ length: 5 }, (_, index) => `l${index + 6}`), 'm2',
-  ...Array.from({ length: 5 }, (_, index) => `l${index + 11}`), 'm3',
-  ...Array.from({ length: 5 }, (_, index) => `l${index + 16}`), 'm4',
-  ...Array.from({ length: 5 }, (_, index) => `l${index + 21}`), 'm5',
-  'l26', 'l27', 'm6',
-  ...Array.from({ length: 47 }, (_, index) => `b${index + 1}`)
-];
+const lessonSequence = pedagogicalContent.learningPathOrder;
+const supplementalLessonCategories = new Map([
+  ...pedagogicalContent.cumulativeLessons,
+  ...pedagogicalContent.reinforcementLessons
+].map(lesson => [lesson.id, lesson.category]));
 const arcadeGameIds = new Set(['snake', 'ninja', 'bubbles', 'train', 'rain', 'stacker', 'paint', 'memory', 'runner', 'fishing']);
 const requestSecret = process.env.REQUEST_HASH_SECRET || 'lecturaclub-local-request-hash';
 
@@ -77,7 +74,7 @@ db.exec(`
   CREATE TABLE IF NOT EXISTS lesson_results (
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     lesson_id TEXT NOT NULL,
-    category TEXT NOT NULL CHECK (category IN ('Vocales', 'Consonantes', 'Sílabas', 'Palabras')),
+    category TEXT NOT NULL CHECK (category IN ('Vocales', 'Consonantes', 'Sílabas', 'Palabras', 'Lecturas')),
     attempts INTEGER NOT NULL DEFAULT 0,
     mistakes INTEGER NOT NULL DEFAULT 0,
     best_stars INTEGER NOT NULL DEFAULT 0,
@@ -192,6 +189,43 @@ if (resultNeedsStarsMigration) db.exec('ALTER TABLE lesson_results ADD COLUMN fi
 if (!resultColumns.includes('retry_stars')) db.exec('ALTER TABLE lesson_results ADD COLUMN retry_stars INTEGER NOT NULL DEFAULT 0');
 if (resultNeedsStarsMigration) {
   db.exec('UPDATE lesson_results SET first_stars = latest_stars, retry_stars = MAX(0, points / 10 - latest_stars)');
+}
+const resultTableSql = db.prepare(
+  "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = 'lesson_results'"
+).get().sql;
+if (!resultTableSql.includes("'Lecturas'")) {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    db.exec(`
+      CREATE TABLE lesson_results_with_readings (
+        user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        lesson_id TEXT NOT NULL,
+        category TEXT NOT NULL CHECK (category IN ('Vocales', 'Consonantes', 'Sílabas', 'Palabras', 'Lecturas')),
+        attempts INTEGER NOT NULL DEFAULT 0,
+        mistakes INTEGER NOT NULL DEFAULT 0,
+        best_stars INTEGER NOT NULL DEFAULT 0,
+        latest_stars INTEGER NOT NULL DEFAULT 0,
+        first_stars INTEGER NOT NULL DEFAULT 0,
+        retry_stars INTEGER NOT NULL DEFAULT 0,
+        points INTEGER NOT NULL DEFAULT 0,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (user_id, lesson_id)
+      );
+      INSERT INTO lesson_results_with_readings (
+        user_id, lesson_id, category, attempts, mistakes, best_stars,
+        latest_stars, first_stars, retry_stars, points, updated_at
+      )
+      SELECT user_id, lesson_id, category, attempts, mistakes, best_stars,
+        latest_stars, first_stars, retry_stars, points, updated_at
+      FROM lesson_results;
+      DROP TABLE lesson_results;
+      ALTER TABLE lesson_results_with_readings RENAME TO lesson_results;
+    `);
+    db.exec('COMMIT');
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
 }
 const customLessonColumns = db.prepare('PRAGMA table_info(custom_lessons)').all().map(column => column.name);
 if (!customLessonColumns.includes('emojis')) db.exec("ALTER TABLE custom_lessons ADD COLUMN emojis TEXT NOT NULL DEFAULT '[]'");
@@ -408,6 +442,7 @@ function requireTeacherOrAdmin(req, res, next) {
 
 // Clasifica una lecci?n seg?n la rama curricular a la que pertenece.
 function lessonCategory(lessonId) {
+  if (supplementalLessonCategories.has(lessonId)) return supplementalLessonCategories.get(lessonId);
   if (/^l[1-5]$/.test(lessonId)) return 'Vocales';
   if (/^l\d+$/.test(lessonId)) return 'Consonantes';
   if (/^m\d+$/.test(lessonId)) return Number(lessonId.slice(1)) === 1 ? 'Vocales' : 'Consonantes';
@@ -415,6 +450,49 @@ function lessonCategory(lessonId) {
   if (lessonId.startsWith('b') && bookIndex >= 1 && bookIndex <= 36) return 'Sílabas';
   if (lessonId.startsWith('b') && bookIndex >= 37 && bookIndex <= 47) return 'Palabras';
   return null;
+}
+
+function customLessonPrerequisiteCompleted(lesson, progress) {
+  const prerequisiteId = pedagogicalContent.resolvePrerequisite(lesson.category, lesson.target);
+  return Boolean(prerequisiteId && progress.completedLessons.includes(prerequisiteId));
+}
+
+function orderedLessonsForStudent(userId) {
+  const items = [...lessonSequence];
+  const customLessons = db.prepare(`
+    SELECT id, map_position AS mapPosition, created_at AS createdAt
+    FROM custom_lessons WHERE student_id = ?
+    ORDER BY map_position, created_at, id
+  `).all(userId);
+  customLessons.forEach(lesson => {
+    const position = Math.min(Math.max(lesson.mapPosition, 0), items.length);
+    items.splice(position, 0, lesson.id);
+  });
+  return items;
+}
+
+function nextAvailableLessonId(userId, progress, sequence = orderedLessonsForStudent(userId)) {
+  const customLessons = new Map(db.prepare(`
+    SELECT id, category, target FROM custom_lessons WHERE student_id = ?
+  `).all(userId).map(lesson => [lesson.id, lesson]));
+  const supplementalLessons = new Map([
+    ...pedagogicalContent.cumulativeLessons,
+    ...pedagogicalContent.reinforcementLessons
+  ].map(lesson => [lesson.id, lesson]));
+
+  return sequence.find(lessonId => {
+    const customLesson = customLessons.get(lessonId);
+    const completed = customLesson
+      ? progress.lessonResults.some(result => result.lessonId === lessonId && result.attempts > 0)
+      : progress.completedLessons.includes(lessonId);
+    if (completed) return false;
+
+    const lesson = customLesson || supplementalLessons.get(lessonId);
+    const prerequisite = customLesson
+      ? pedagogicalContent.resolvePrerequisite(customLesson.category, customLesson.target)
+      : lesson?.prerequisite;
+    return !prerequisite || progress.completedLessons.includes(prerequisite);
+  });
 }
 
 // Comprueba que los filtros de palabras solo usen claves y valores admitidos.
@@ -865,10 +943,27 @@ app.post('/api/auth/resend-verification', async (req, res) => {
   res.json({ message: 'Si la cuenta necesita confirmación, enviaremos un nuevo código a ese correo.' });
 });
 
-// Cierra la sesi?n actual y elimina la cookie del cliente.
+// Cierra la sesión actual, reinicia el arcade y elimina la cookie del cliente.
 app.post('/api/auth/logout', (req, res) => {
   const token = req.cookies?.lecturaclub_session;
-  if (token) db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenDigest(token));
+  if (token) {
+    db.exec('BEGIN IMMEDIATE');
+    try {
+      const session = db.prepare(`
+        SELECT user_id AS userId FROM sessions
+        WHERE token_hash = ? AND expires_at > ?
+      `).get(tokenDigest(token), Date.now());
+      if (session) {
+        db.prepare('UPDATE progress SET completed_arcade_levels = ?, updated_at = ? WHERE user_id = ?')
+          .run('[]', Date.now(), session.userId);
+      }
+      db.prepare('DELETE FROM sessions WHERE token_hash = ?').run(tokenDigest(token));
+      db.exec('COMMIT');
+    } catch (error) {
+      db.exec('ROLLBACK');
+      throw error;
+    }
+  }
   clearSessionCookie(res);
   res.json({ ok: true });
 });
@@ -1012,6 +1107,37 @@ app.delete('/api/admin/users/:id', requireSuperAdmin, (req, res) => {
   res.json({ ok: true });
 });
 
+// Borra permanentemente la cuenta seleccionada y todos sus datos relacionados.
+app.delete('/api/admin/users/:id/permanent', requireSuperAdmin, (req, res) => {
+  const userId = req.params.id;
+  if (userId === req.user.id) {
+    return res.status(400).json({ error: 'No puedes eliminar permanentemente tu propia cuenta de superadministrador.' });
+  }
+
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const target = db.prepare('SELECT id, role FROM users WHERE id = ?').get(userId);
+    if (!target) {
+      db.exec('ROLLBACK');
+      return res.status(404).json({ error: 'No se encontró ese usuario.' });
+    }
+    if (target.role === 'superadmin') {
+      const count = db.prepare("SELECT COUNT(*) AS count FROM users WHERE role = 'superadmin' AND deleted_at IS NULL").get().count;
+      if (count <= 1) {
+        db.exec('ROLLBACK');
+        return res.status(400).json({ error: 'No se puede eliminar permanentemente el último superadministrador.' });
+      }
+    }
+
+    db.prepare('DELETE FROM users WHERE id = ?').run(userId);
+    db.exec('COMMIT');
+    res.json({ ok: true, permanentlyDeleted: true });
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+});
+
 // Restaura una cuenta previamente eliminada para volver a usarla.
 app.post('/api/admin/users/:id/restore', requireSuperAdmin, (req, res) => {
   const result = db.prepare('UPDATE users SET deleted_at = NULL, access_blocked_at = NULL WHERE id = ? AND deleted_at IS NOT NULL').run(req.params.id);
@@ -1097,7 +1223,7 @@ app.get('/api/teacher/students/:id/progress', requireTeacherOrAdmin, (req, res) 
   const student = db.prepare("SELECT id, name, username FROM users WHERE id = ? AND role = 'alumno' AND deleted_at IS NULL").get(req.params.id);
   if (!student) return res.status(404).json({ error: 'No se encontró ese alumno.' });
   const rows = readLessonResults(student.id);
-  const sections = ['Vocales', 'Consonantes', 'Sílabas', 'Palabras'].map(category => {
+  const sections = ['Vocales', 'Consonantes', 'Sílabas', 'Palabras', 'Lecturas'].map(category => {
     const categoryRows = rows.filter(row => row.category === category);
     const attempts = categoryRows.reduce((total, row) => total + row.attempts, 0);
     const points = categoryRows.reduce((total, row) => total + row.points, 0);
@@ -1141,6 +1267,11 @@ app.get('/api/teacher/students/:id/progress', requireTeacherOrAdmin, (req, res) 
 
 // Expone el cat?logo de lecciones disponible para profesores.
 app.get('/api/teacher/lessons', requireTeacherOrAdmin, (req, res) => {
+  const studentId = req.query.studentId;
+  if (typeof studentId !== 'string' || !studentId) return res.json({ lessons: [] });
+  if (!db.prepare("SELECT id FROM users WHERE id = ? AND role = 'alumno' AND deleted_at IS NULL").get(studentId)) {
+    return res.status(404).json({ error: 'No se encontró ese alumno activo.' });
+  }
   const lessons = db.prepare(`
     SELECT custom_lessons.id, custom_lessons.title, custom_lessons.description,
       custom_lessons.category, custom_lessons.subcategory, custom_lessons.target,
@@ -1149,8 +1280,8 @@ app.get('/api/teacher/lessons', requireTeacherOrAdmin, (req, res) => {
       custom_lessons.student_id AS studentId,
       users.name AS studentName, users.username AS studentUsername
     FROM custom_lessons JOIN users ON users.id = custom_lessons.student_id
-    WHERE users.deleted_at IS NULL ORDER BY custom_lessons.created_at DESC
-  `).all();
+    WHERE users.id = ? AND users.deleted_at IS NULL ORDER BY custom_lessons.created_at DESC
+  `).all(studentId);
   res.json({ lessons: lessons.map(lesson => ({
     ...lesson, words: JSON.parse(lesson.words), emojis: JSON.parse(lesson.emojis),
     wordFilters: JSON.parse(lesson.wordFilters)
@@ -1326,6 +1457,11 @@ app.get('/api/games/custom', requireAuth, (req, res) => {
 
 // Lista los juegos del profesor para gestionarlos desde el dashboard.
 app.get('/api/teacher/games', requireTeacherOrAdmin, (req, res) => {
+  const studentId = req.query.studentId;
+  if (typeof studentId !== 'string' || !studentId) return res.json({ games: [] });
+  if (!db.prepare("SELECT id FROM users WHERE id = ? AND role = 'alumno' AND deleted_at IS NULL").get(studentId)) {
+    return res.status(404).json({ error: 'No se encontró ese alumno activo.' });
+  }
   const games = req.user.role === 'superadmin'
     ? db.prepare(`
       SELECT custom_games.id, custom_games.title,
@@ -1333,16 +1469,17 @@ app.get('/api/teacher/games', requireTeacherOrAdmin, (req, res) => {
         custom_games.items, custom_games.theme, custom_games.student_id AS studentId,
         users.name AS studentName, users.username AS studentUsername
       FROM custom_games JOIN users ON users.id = custom_games.student_id
-      ORDER BY custom_games.created_at DESC
-    `).all()
+      WHERE users.id = ? AND users.deleted_at IS NULL ORDER BY custom_games.created_at DESC
+    `).all(studentId)
     : db.prepare(`
       SELECT custom_games.id, custom_games.title,
         CASE WHEN custom_games.activity_type = 'bridge' THEN 'bridge' ELSE custom_games.game_type END AS type,
         custom_games.items, custom_games.theme, custom_games.student_id AS studentId,
         users.name AS studentName, users.username AS studentUsername
       FROM custom_games JOIN users ON users.id = custom_games.student_id
-      WHERE custom_games.teacher_id = ? ORDER BY custom_games.created_at DESC
-    `).all(req.user.id);
+      WHERE custom_games.teacher_id = ? AND users.id = ? AND users.deleted_at IS NULL
+      ORDER BY custom_games.created_at DESC
+    `).all(req.user.id, studentId);
   res.json({ games: games.map(game => ({ ...game, items: JSON.parse(game.items) })) });
 });
 
@@ -1374,8 +1511,8 @@ app.post('/api/teacher/games', requireTeacherOrAdmin, (req, res) => {
       !validThemes.includes(theme)) {
     return res.status(400).json({ error: 'Escribe un título y añade al menos tres palabras e imágenes válidas; para el puente, indica una sílaba que sea solo una parte de cada palabra.' });
   }
-  const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'alumno'").get(studentId);
-  if (!student) return res.status(404).json({ error: 'No se encontró ese alumno.' });
+  const student = db.prepare("SELECT id FROM users WHERE id = ? AND role = 'alumno' AND deleted_at IS NULL").get(studentId);
+  if (!student) return res.status(404).json({ error: 'No se encontró ese alumno activo.' });
   const game = {
     id: `g-${crypto.randomUUID()}`,
     title: title.trim(),
@@ -1432,7 +1569,7 @@ app.post('/api/progress/reset', requireAuth, (req, res) => {
   if (!hasFullAccess(req.user.role)) return res.status(403).json({ error: 'Solo el profesor o superadministrador puede reiniciar el progreso.' });
   const { scope = 'all', lessonId, category } = req.body || {};
   const studentId = req.body?.studentId;
-  const validCategories = ['Vocales', 'Consonantes', 'Sílabas', 'Palabras'];
+  const validCategories = ['Vocales', 'Consonantes', 'Sílabas', 'Palabras', 'Lecturas'];
   if (typeof studentId !== 'string' ||
       (scope === 'lesson' && typeof lessonId !== 'string') ||
       (scope === 'section' && !validCategories.includes(category)) ||
@@ -1487,12 +1624,20 @@ app.post('/api/progress/complete', requireAuth, (req, res) => {
     }
     completionId = id;
     if (!lessonSequence.includes(id)) {
-      customLesson = db.prepare('SELECT id, category, student_id FROM custom_lessons WHERE id = ?').get(id);
+      customLesson = db.prepare('SELECT id, category, target, student_id, map_position AS mapPosition FROM custom_lessons WHERE id = ?').get(id);
       if (!customLesson || customLesson.student_id !== req.user.id) {
         return res.status(404).json({ error: 'No se encontró esa lección asignada.' });
       }
-    } else if (!privileged && !progress.completedLessons.includes(completionId)) {
-      const nextLessonId = lessonSequence.find(lessonId => !progress.completedLessons.includes(lessonId));
+      if (!customLessonPrerequisiteCompleted(customLesson, progress)) {
+        return res.status(403).json({ error: 'Completa primero la lección oficial correspondiente para desbloquear esta lección personalizada.' });
+      }
+    }
+    if (!privileged && !(
+      customLesson
+        ? progress.lessonResults.some(result => result.lessonId === completionId && result.attempts > 0)
+        : progress.completedLessons.includes(completionId)
+    )) {
+      const nextLessonId = nextAvailableLessonId(req.user.id, progress);
       if (nextLessonId !== completionId) {
         return res.status(403).json({ error: 'Completa primero la lección anterior para desbloquear esta.' });
       }
@@ -1520,12 +1665,20 @@ app.post('/api/progress/complete', requireAuth, (req, res) => {
   try {
     const latestProgress = readProgress(req.user.id);
     if (type === 'lesson') {
-      if (lessonSequence.includes(completionId) && !latestProgress.completedLessons.includes(completionId)) {
-        const nextLessonId = lessonSequence.find(lessonId => !latestProgress.completedLessons.includes(lessonId));
+      if (customLesson && !customLessonPrerequisiteCompleted(customLesson, latestProgress)) {
+        db.exec('ROLLBACK');
+        return res.status(403).json({ error: 'Completa primero la lección oficial correspondiente para desbloquear esta lección personalizada.' });
+      }
+      const customAlreadyCompleted = customLesson &&
+        latestProgress.lessonResults.some(result => result.lessonId === completionId && result.attempts > 0);
+      if (!privileged && !latestProgress.completedLessons.includes(completionId) && !customAlreadyCompleted) {
+        const nextLessonId = nextAvailableLessonId(req.user.id, latestProgress);
         if (!privileged && nextLessonId !== completionId) {
           db.exec('ROLLBACK');
           return res.status(403).json({ error: 'Completa primero la lección anterior para desbloquear esta.' });
         }
+      }
+      if (lessonSequence.includes(completionId) && !latestProgress.completedLessons.includes(completionId)) {
         latestProgress.completedLessons.push(completionId);
         latestProgress.xp = Math.min(1_000_000_000, latestProgress.xp + award);
       }
@@ -1583,6 +1736,8 @@ app.get('/custom-games.js', (req, res) => res.sendFile(path.join(__dirname, 'cus
 app.get('/emoji-catalog.js', (req, res) => res.sendFile(path.join(__dirname, 'emoji-catalog.js')));
 // Sirve el contenido arcade del proyecto para los minijuegos.
 app.get('/arcade-content.js', (req, res) => res.sendFile(path.join(__dirname, 'arcade-content.js')));
+// Sirve el contenido pedagógico compartido por el navegador y el servidor.
+app.get('/pedagogical-content.js', (req, res) => res.sendFile(path.join(__dirname, 'pedagogical-content.js')));
 // Sirve la hoja de estilos principal para la experiencia visual.
 app.get('/style.css', (req, res) => res.sendFile(path.join(__dirname, 'style.css')));
 // Env?a un 404 cuando la ruta solicitada no existe en la app.

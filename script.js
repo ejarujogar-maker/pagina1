@@ -3,6 +3,8 @@
    ========================================================================== */
 const arcadeContent = window.LecturaClubArcadeContent;
 if (!arcadeContent) throw new Error('No se pudo cargar el contenido del Arcade.');
+const pedagogicalContent = window.LecturaClubPedagogicalContent;
+if (!pedagogicalContent) throw new Error('No se pudo cargar el contenido pedagógico.');
 
 const ALL_LESSONS = [
   // Bloque 1: Vocales y primeras letras
@@ -141,14 +143,14 @@ function makeReadingLesson(id, name, words, readingText, emoji = '📚') {
 }
 
 const BOOK_LESSONS = [
-  makeSyllableLesson('b1', 'Sílabas con M', ['ma', 'me', 'mi', 'mo', 'mu'], ['mamá', 'mimo', 'momia', 'miau'], '👩'),
-  makeSyllableLesson('b2', 'Sílabas con P', ['pa', 'pe', 'pi', 'po', 'pu'], ['papá', 'pipa', 'mapa', 'puma'], '🫧'),
-  makeSyllableLesson('b3', 'Sílabas con L', ['la', 'le', 'li', 'lo', 'lu'], ['loma', 'pala', 'lima', 'lupa'], '🌙'),
-  makeSyllableLesson('b4', 'Sílabas con S', ['sa', 'se', 'si', 'so', 'su'], ['suma', 'sopa', 'sapo', 'mesa'], '🐍'),
-  makeSyllableLesson('b5', 'Sílabas con T', ['ta', 'te', 'ti', 'to', 'tu'], ['tomate', 'tapa', 'pato', 'moto'], '🍅'),
-  makeSyllableLesson('b6', 'Sílabas con N', ['na', 'ne', 'ni', 'no', 'nu'], ['nena', 'luna', 'mano', 'pino'], '🌙'),
-  makeSyllableLesson('b7', 'Sílabas con D', ['da', 'de', 'di', 'do', 'du'], ['dado', 'dedo', 'duda', 'nido'], '🎲'),
-  makeSyllableLesson('b8', 'Sílabas con C', ['ca', 'co', 'cu'], ['casa', 'cama', 'coco', 'cuna'], '🏠'),
+  makeSyllableLesson('b1', 'Sílabas con M', ['ma', 'me', 'mi', 'mo', 'mu'], ['mamá', 'mimo', 'momia', 'miau', 'mima', 'mira', 'a', 'ama'], '👩'),
+  makeSyllableLesson('b2', 'Sílabas con P', ['pa', 'pe', 'pi', 'po', 'pu'], ['papá', 'pipa', 'mapa', 'puma', 'pasa', 'mi'], '🫧'),
+  makeSyllableLesson('b3', 'Sílabas con L', ['la', 'le', 'li', 'lo', 'lu'], ['loma', 'pala', 'lima', 'lupa', 'Lola', 'lee', 'la'], '🌙'),
+  makeSyllableLesson('b4', 'Sílabas con S', ['sa', 'se', 'si', 'so', 'su'], ['suma', 'sopa', 'sapo', 'mesa', 'Susi', 'sale', 'sola', 'usa'], '🐍'),
+  makeSyllableLesson('b5', 'Sílabas con T', ['ta', 'te', 'ti', 'to', 'tu'], ['tomate', 'tapa', 'pato', 'moto', 'Tomás', 'salta'], '🍅'),
+  makeSyllableLesson('b6', 'Sílabas con N', ['na', 'ne', 'ni', 'no', 'nu'], ['nena', 'luna', 'mano', 'pino', 'Nina', 'nada'], '🌙'),
+  makeSyllableLesson('b7', 'Sílabas con D', ['da', 'de', 'di', 'do', 'du'], ['dado', 'dedo', 'duda', 'nido', 'Dalia', 'da', 'el', 'del'], '🎲'),
+  makeSyllableLesson('b8', 'Sílabas con C', ['ca', 'co', 'cu'], ['casa', 'cama', 'coco', 'cuna', 'cuida'], '🏠'),
   makeSyllableLesson('b9', 'Sílabas con C y Q', ['ca', 'que', 'qui', 'co', 'cu'], ['casa', 'queso', 'quiosco', 'paquete'], '🧀'),
   makeSyllableLesson('b10', 'Sílabas con B', ['ba', 'be', 'bi', 'bo', 'bu'], ['bola', 'bebé', 'bota', 'nube'], '⚽'),
   makeSyllableLesson('b11', 'Sílabas con V', ['va', 've', 'vi', 'vo', 'vu'], ['vaca', 'vela', 'uva', 'pavo'], '🐄'),
@@ -191,6 +193,22 @@ const BOOK_LESSONS = [
 ];
 
 ALL_LESSONS.push(...BOOK_LESSONS);
+const cumulativeLessonObjects = pedagogicalContent.cumulativeLessons.map(lesson => ({
+  ...lesson,
+  mouth: 'Lee y arma cada oración usando las palabras que ya practicaste.',
+  readingText: lesson.sentences.join(' '),
+  examples: []
+}));
+const reinforcementLessonObjects = pedagogicalContent.reinforcementLessons.map(lesson => ({
+  ...lesson,
+  mouth: 'Escucha con atención y practica cada sonido paso a paso.',
+  examples: lesson.words.map(([w, emoji]) => ({ w, emoji }))
+}));
+const firstPostCumulativeLesson = ALL_LESSONS.findIndex(lesson => lesson.id === 'b9');
+ALL_LESSONS.splice(firstPostCumulativeLesson, 0, ...cumulativeLessonObjects);
+ALL_LESSONS.push(...reinforcementLessonObjects);
+const lessonOrder = new Map(pedagogicalContent.learningPathOrder.map((id, index) => [id, index]));
+ALL_LESSONS.sort((left, right) => lessonOrder.get(left.id) - lessonOrder.get(right.id));
 
 /* ==========================================================================
    2. ESTADO GLOBAL Y AUTENTICACIÓN
@@ -293,7 +311,7 @@ function lessonReportCategory(lesson) {
   if (/^b(?:[1-9]|[12]\d|3[0-6])$/.test(lesson.id)) return 'Sílabas';
   if (/^b(?:3[7-9]|4[0-7])$/.test(lesson.id)) return 'Palabras';
   if (lesson.category === 'Vocales' || lesson.category === 'Consonantes' ||
-      lesson.category === 'Sílabas' || lesson.category === 'Palabras') return lesson.category;
+      lesson.category === 'Sílabas' || lesson.category === 'Palabras' || lesson.category === 'Lecturas') return lesson.category;
   return null;
 }
 
@@ -308,7 +326,7 @@ async function recordCompletion(type, details) {
     if (type === 'lesson') {
       const lesson = appState.currentModalLesson;
       const category = lesson && lessonReportCategory(lesson);
-      if (['Vocales', 'Consonantes', 'Sílabas', 'Palabras'].includes(category)) {
+      if (['Vocales', 'Consonantes', 'Sílabas', 'Palabras', 'Lecturas'].includes(category)) {
         const previous = appState.lessonResults.find(result => result.lessonId === details.id);
         const stars = Math.max(0, 3 - Math.min(3, details.mistakes || 0));
         if (previous) {
@@ -592,6 +610,7 @@ async function handleAuthSubmit(event) {
     updateStatsUI();
     renderContinuousMap();
     closeAuthModal();
+    switchTab('map');
     playSound('success');
     owlSpeak(`¡Hola, ${result.user.name}!`);
   } catch (error) {
@@ -602,36 +621,75 @@ async function handleAuthSubmit(event) {
 }
 
 async function handleLogout(reason = null) {
+  const forced = ['idle', 'student-limit', 'remote'].includes(reason);
+  stopSessionProtection();
+  clearTimeout(progressSyncTimer);
+  progressSyncTimer = null;
+  if (activeGameLoop) cancelAnimationFrame(activeGameLoop);
+  activeGameLoop = null;
+  if (arcadeTransitionTimer !== null) clearTimeout(arcadeTransitionTimer);
+  arcadeTransitionTimer = null;
+  clearActiveGameIntervals();
+  studentPreviewActive = false;
+  studentPreviewReturnState = null;
+  appState.currentUser = null;
+  appState.xp = 0;
+  appState.completedLessons = [];
+  appState.completedArcadeLevels = [];
+  appState.lessonResults = [];
+  appState.customLessons = [];
+  appState.customGames = [];
+  appState.currentModalLesson = null;
+  appState.modalStepItems = new Set();
+  lessonPreviewMode = false;
+  [
+    'lecturaclub_state_v6', 'lc_xp', 'lc_lessons'
+  ].forEach(key => {
+    try {
+      localStorage.removeItem(key);
+    } catch (error) {
+      console.error(`No se pudo limpiar ${key}:`, error);
+    }
+  });
+  document.getElementById('student-preview-banner').classList.add('hidden');
+  document.getElementById('lesson-modal').classList.add('hidden');
+  document.getElementById('results-modal').classList.add('hidden');
+  document.getElementById('milestone-modal').classList.add('hidden');
+  document.getElementById('teacher-dashboard-modal').classList.add('hidden');
+  document.getElementById('admin-users-modal').classList.add('hidden');
+  document.getElementById('arcade-play-stage').classList.add('hidden');
+  document.getElementById('view-map').classList.add('hidden');
+  document.getElementById('view-minigames').classList.add('hidden');
+  closeAuthModal();
+  updateAuthUI();
+  updateStatsUI();
+  setAuthMode('login');
+
+  if (forced) {
+    openAuthModal();
+    const message = reason === 'idle'
+      ? `Tu sesión expiró tras ${Math.round(SESSION_IDLE_LIMIT_MS / 60000)} minutos de inactividad. Inicia sesión para continuar.`
+      : reason === 'student-limit'
+        ? `Tu sesión de aprendizaje alcanzó el límite de ${Math.round(STUDENT_SESSION_LIMIT_MS / 60000)} minutos. Inicia sesión para continuar.`
+        : 'Tu sesión expiró o fue cerrada. Inicia sesión para continuar.';
+    document.getElementById('auth-message').innerText = message;
+  } else {
+    switchTab('map');
+  }
+
   try {
     const response = await fetch('/api/auth/logout', { method: 'POST' });
-    if (!response.ok) throw new Error('No se pudo cerrar la sesión.');
-    stopSessionProtection();
-    appState.currentUser = null;
-    appState.xp = 0;
-    appState.completedLessons = [];
-    appState.completedArcadeLevels = [];
-    appState.lessonResults = [];
-    appState.customLessons = [];
-    appState.customGames = [];
-    saveState();
-    updateAuthUI();
-    setAuthMode('login');
-    document.getElementById('auth-modal').classList.add('hidden');
-    switchTab('map');
-    renderArcadeHub();
-    if (reason === 'idle') {
-      openAuthModal();
-      document.getElementById('auth-message').innerText = 'Cerramos tu sesión después de 3 minutos sin actividad. Inicia sesión para continuar.';
+    if (!response.ok && response.status !== 401 && response.status !== 403) {
+      throw new Error(`HTTP ${response.status}`);
     }
   } catch (error) {
-    console.error(error);
-    if (reason === 'idle') {
-      document.getElementById('progress-sync-status').innerText = 'No se pudo cerrar la sesión; volveremos a intentarlo.';
+    console.error('No se pudo invalidar la sesión en el servidor:', error);
+    if (forced) {
+      document.getElementById('progress-sync-status').innerText = 'Sesión local cerrada. No se pudo confirmar el cierre con el servidor.';
       document.getElementById('progress-sync-status').classList.add('text-rose-600');
-      return false;
+    } else {
+      alert('Se cerró la sesión en este dispositivo, pero no se pudo confirmar el cierre con el servidor.');
     }
-    alert(error.message);
-    return false;
   }
   playSound('pop');
   return true;
@@ -855,6 +913,7 @@ async function loadAdminUsers() {
         restore.textContent = 'Restaurar';
         restore.addEventListener('click', () => administerUser(user, 'restore', 'POST'));
         action.append(restore);
+        action.append(createPermanentDeleteButton(user));
       } else if (user.id !== result.currentUserId) {
         if (user.role !== 'superadmin') {
           const roleSelect = document.createElement('select');
@@ -889,9 +948,10 @@ async function loadAdminUsers() {
         }
         const button = document.createElement('button');
         button.className = 'text-rose-600 underline font-bold';
-        button.textContent = 'Eliminar';
+        button.textContent = 'Eliminar (reversible)';
         button.addEventListener('click', () => deleteManagedUser(user));
         action.append(button);
+        action.append(createPermanentDeleteButton(user));
       } else {
         action.textContent = 'Tu sesión';
       }
@@ -905,6 +965,14 @@ async function loadAdminUsers() {
     message.innerText = error.message;
     message.classList.add('text-rose-600');
   }
+}
+
+function createPermanentDeleteButton(user) {
+  const button = document.createElement('button');
+  button.className = 'text-rose-800 underline font-black';
+  button.textContent = 'Eliminar definitivamente';
+  button.addEventListener('click', () => permanentlyDeleteManagedUser(user));
+  return button;
 }
 
 async function updateManagedUserRole(user, roleSelect, button) {
@@ -934,6 +1002,29 @@ async function deleteManagedUser(user) {
     await loadAdminUsers();
   } catch (error) {
     document.getElementById('admin-users-message').innerText = error.message;
+  }
+}
+
+async function permanentlyDeleteManagedUser(user) {
+  const confirmation = prompt(
+    `Esta acción es irreversible y borrará la cuenta y sus datos asociados.\n\nEscribe el nombre de usuario @${user.username} para confirmar.`
+  );
+  if (confirmation === null) return;
+  if (confirmation.trim() !== user.username) {
+    document.getElementById('admin-users-message').innerText = 'El nombre de usuario no coincide. No se eliminó la cuenta.';
+    document.getElementById('admin-users-message').classList.add('text-rose-600');
+    return;
+  }
+  try {
+    const response = await fetch(`/api/admin/users/${encodeURIComponent(user.id)}/permanent`, {
+      method: 'DELETE'
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || 'No se pudo eliminar permanentemente al usuario.');
+    await loadAdminUsers();
+  } catch (error) {
+    document.getElementById('admin-users-message').innerText = error.message;
+    document.getElementById('admin-users-message').classList.add('text-rose-600');
   }
 }
 
@@ -1224,15 +1315,34 @@ function exitStudentPreview() {
 // Calcula la siguiente lección disponible según el progreso actual.
 
 function nextLessonId() {
-  return ALL_LESSONS.find(lesson => !appState.completedLessons.includes(lesson.id))?.id;
+  return orderLessonsForMap(appState.customLessons).find(lesson => {
+    if (lessonHasBeenCompleted(lesson)) return false;
+    const prerequisite = lesson.prerequisite ||
+      (lesson.isCustom ? pedagogicalContent.resolvePrerequisite(lesson.category, lesson.target) : null);
+    return !prerequisite || appState.completedLessons.includes(prerequisite);
+  })?.id;
 }
 
 // Determina si una lección está disponible para el usuario actual.
 
 function canAccessLesson(lessonId) {
-  if (appState.customLessons.some(lesson => lesson.id === lessonId)) return true;
-  if (hasFullAccess() || appState.completedLessons.includes(lessonId)) return true;
+  const lesson = ALL_LESSONS.find(item => item.id === lessonId) ||
+    appState.customLessons.find(item => item.id === lessonId);
+  if (!lesson) return false;
+  if (!appState.currentUser && !pedagogicalContent.isGuestLessonAccessible(lessonId)) return false;
+  if (hasFullAccess()) return true;
+  const prerequisite = lesson.prerequisite ||
+    (lesson.isCustom ? pedagogicalContent.resolvePrerequisite(lesson.category, lesson.target) : null);
+  if (prerequisite && !appState.completedLessons.includes(prerequisite)) return false;
+  if (lessonHasBeenCompleted(lesson)) return true;
   return nextLessonId() === lessonId;
+}
+
+function promptGuestAccountForNextLessons() {
+  setAuthMode('login');
+  document.getElementById('auth-modal').classList.remove('hidden');
+  document.getElementById('auth-message').innerText =
+    `Puedes aprender gratis hasta la lección de la letra T. Inicia sesión o crea una cuenta para continuar con las siguientes lecciones.`;
 }
 
 // Comprueba si una lección ya fue completada por el usuario.
@@ -1378,8 +1488,12 @@ function drawTrailPath() {
 // Desplaza la vista hacia la siguiente lección disponible.
 
 function scrollToNextLesson() {
-  const firstUnfinished = [...ALL_LESSONS, ...appState.customLessons].find(l => !lessonHasBeenCompleted(l));
+  const firstUnfinished = orderLessonsForMap(appState.customLessons).find(l => !lessonHasBeenCompleted(l));
   if (firstUnfinished) {
+    if (!appState.currentUser && !pedagogicalContent.isGuestLessonAccessible(firstUnfinished.id)) {
+      promptGuestAccountForNextLessons();
+      return;
+    }
     if (firstUnfinished.isMilestone) {
       openMilestoneGame(firstUnfinished.id);
       return;
@@ -1397,6 +1511,10 @@ function openLessonModal(lessonId) {
   const lesson = ALL_LESSONS.find(l => l.id === lessonId) || appState.customLessons.find(l => l.id === lessonId);
   if (!lesson) return;
   if (!canAccessLesson(lessonId)) {
+    if (!appState.currentUser && !pedagogicalContent.isGuestLessonAccessible(lessonId)) {
+      promptGuestAccountForNextLessons();
+      return;
+    }
     owlSpeak('Completa la lección anterior para desbloquear esta.');
     return;
   }
@@ -1441,6 +1559,14 @@ function updateLessonStepCompletion(step, complete) {
 
 function markLessonStepItem(step, index, total) {
   appState.modalStepItems.add(`${step}:${index}`);
+  const choice = document.querySelector(
+    `#modal-game-area [data-sound-index="${index}"], #modal-game-area [data-practice-card="${index}"]`
+  );
+  if (choice) {
+    choice.classList.remove('lesson-correct-pop');
+    void choice.offsetWidth;
+    choice.classList.add('lesson-correct-pop');
+  }
   if (Array.from({ length: total }, (_, itemIndex) => appState.modalStepItems.has(`${step}:${itemIndex}`)).every(Boolean)) {
     updateLessonStepCompletion(step, true);
   }
@@ -1474,6 +1600,96 @@ function closeLessonModal() {
   lessonPreviewMode = false;
 }
 
+function renderCumulativeSentenceStep(lesson, body) {
+  const sentences = lesson.sentences;
+  const sentenceIndex = sentences.findIndex((_, index) =>
+    !appState.modalStepItems.has(`2:${index}`)
+  );
+  if (sentenceIndex < 0) {
+    body.innerHTML = '<div class="lesson-finish-pop rounded-3xl bg-emerald-50 p-8 text-center"><div class="text-6xl">🌟🦉🌟</div><h4 class="mt-4 text-2xl font-black text-emerald-800">¡Todas las oraciones listas!</h4><p class="mt-2 font-bold text-emerald-700">Has leído y armado cada oración.</p></div>';
+    updateLessonStepCompletion(2, true);
+    return;
+  }
+
+  const tokens = sentences[sentenceIndex].trim().split(/\s+/);
+  body.innerHTML = `
+    <section class="cumulative-activity" aria-labelledby="cumulative-activity-title">
+      <header class="cumulative-activity-header">
+        <span class="cumulative-activity-progress">Oración ${sentenceIndex + 1} de ${sentences.length}</span>
+        <h4 id="cumulative-activity-title" class="font-fredoka font-black text-purple-950">¡Escucha y arma la oración!</h4>
+        <p class="cumulative-activity-instructions">Escucha la frase y elige sus palabras en orden.</p>
+        <button id="sentence-listen-btn" type="button" class="cumulative-listen-button bouncy">🔊 Escuchar oración</button>
+      </header>
+      <div id="sentence-built-text" role="group" aria-label="Oración en construcción" aria-live="polite" class="cumulative-sentence">
+        ${tokens.map((token, index) => `
+          <span class="cumulative-word-slot ${appState.modalStepItems.has(`sentence:${sentenceIndex}:${index}`) ? 'is-filled' : ''}">
+            ${appState.modalStepItems.has(`sentence:${sentenceIndex}:${index}`)
+              ? escapeHtml(token) : '<span class="sr-only">Palabra pendiente</span><span aria-hidden="true">···</span>'}
+          </span>
+        `).join(' ')}
+      </div>
+      <div class="cumulative-word-bank" role="group" aria-label="Palabras disponibles">
+        ${shuffleValues(tokens.map((token, index) => ({ token, index }))).map(({ token, index }) => `
+          <button type="button" data-sentence-word="${index}" ${appState.modalStepItems.has(`sentence:${sentenceIndex}:${index}`) ? 'disabled' : ''}
+            class="cumulative-word-button bouncy disabled:opacity-40"
+          >
+            ${escapeHtml(token)}
+          </button>
+        `).join('')}
+      </div>
+      <p id="sentence-feedback" class="cumulative-feedback" role="status" aria-live="polite"></p>
+    </section>
+  `;
+  document.getElementById('sentence-listen-btn').addEventListener('click', () => owlSpeak(sentences[sentenceIndex]));
+  body.querySelectorAll('[data-sentence-word]').forEach(button => {
+    button.addEventListener('click', () => {
+      const selectedIndex = Number(button.dataset.sentenceWord);
+      const nextToken = tokens.findIndex((_, index) =>
+        !appState.modalStepItems.has(`sentence:${sentenceIndex}:${index}`)
+      );
+      const feedback = document.getElementById('sentence-feedback');
+      if (selectedIndex !== nextToken) {
+        appState.currentMistakes++;
+        playSound('wrong');
+        button.classList.remove('lesson-wiggle');
+        void button.offsetWidth;
+        button.classList.add('lesson-wiggle');
+        feedback.textContent = '¡Casi! Busca la palabra que sigue. 🧩';
+        return;
+      }
+
+      appState.modalStepItems.add(`sentence:${sentenceIndex}:${selectedIndex}`);
+      button.disabled = true;
+      button.classList.add('lesson-correct-pop');
+      playSound('correct');
+      feedback.textContent = '';
+      document.getElementById('sentence-built-text').innerHTML = tokens.map((token, index) => `
+        <span class="cumulative-word-slot ${appState.modalStepItems.has(`sentence:${sentenceIndex}:${index}`) ? 'is-filled' : ''}">
+          ${appState.modalStepItems.has(`sentence:${sentenceIndex}:${index}`)
+            ? escapeHtml(token) : '<span class="sr-only">Palabra pendiente</span><span aria-hidden="true">···</span>'}
+        </span>
+      `).join(' ');
+
+      const sentenceComplete = tokens.every((_, index) =>
+        appState.modalStepItems.has(`sentence:${sentenceIndex}:${index}`)
+      );
+      if (!sentenceComplete) return;
+
+      markLessonStepItem(2, sentenceIndex, sentences.length);
+      triggerConfetti();
+      feedback.textContent = `¡Oración completa! ${sentences[sentenceIndex]} ⭐`;
+      if (sentenceIndex < sentences.length - 1) {
+        const nextButton = document.createElement('button');
+        nextButton.type = 'button';
+        nextButton.className = 'cumulative-next-button bouncy';
+        nextButton.textContent = 'Siguiente oración →';
+        nextButton.addEventListener('click', () => renderCumulativeSentenceStep(lesson, body));
+        feedback.after(nextButton);
+      }
+    });
+  });
+}
+
 // Pinta el paso activo del modal según el índice actual.
 
 function renderModalStep() {
@@ -1498,14 +1714,15 @@ function renderModalStep() {
 
   if (appState.modalStep === 1) {
     const description = lesson.description || lesson.mouth || 'Escucha con atención el sonido de esta lección.';
-    owlSpeak(`Paso 1: descubrimos el sonido. ${description} ${lesson.syllables ? 'Escucha todas las sílabas y tócalas para oírlas.' : `Toca la letra ${lesson.target} para escucharla.`}`);
+    const usesSyllableTargets = lesson.category === 'Sílabas';
+    owlSpeak(`Paso 1: descubrimos el sonido. ${description} ${usesSyllableTargets ? 'Escucha todas las sílabas y tócalas para oírlas.' : `Toca la letra ${lesson.target} para escucharla.`}`);
     const practiceTarget = lesson.syllables
       ? `<div class="flex flex-wrap justify-center gap-2">${lesson.syllables.map((syllable, index) => `<button type="button" data-sound-index="${index}" class="lesson-practice-choice bouncy bg-gradient-to-tr from-purple-600 to-pink-500 text-white rounded-2xl px-3 py-3 font-black font-fredoka">${escapeHtml(syllable)}</button>`).join('')}</div>`
       : `<button type="button" data-sound-index="0" class="lesson-practice-choice bouncy inline-flex flex-col items-center justify-center min-w-32 min-h-32 px-4 bg-gradient-to-tr from-purple-600 to-pink-500 text-white rounded-3xl shadow-xl mx-auto border-4 border-yellow-300"><span class="text-3xl font-black font-fredoka">${escapeHtml(lesson.target)}</span><span class="text-[10px] font-black text-yellow-200 mt-1 uppercase"><i class="fa-solid fa-volume-high"></i> Toca para oír</span></button>`;
     body.innerHTML = `
       <div class="text-center space-y-4 my-auto w-full max-w-[70rem]">
         <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-black uppercase">Paso 1: Descubrimos el Sonido</span>
-        <h4 class="text-2xl font-black text-purple-950 font-fredoka">${lesson.syllables ? 'Escucha las sílabas' : '¿Cómo suena?'}</h4>
+        <h4 class="text-2xl font-black text-purple-950 font-fredoka">${usesSyllableTargets ? 'Escucha las sílabas' : 'Escucha la letra'}</h4>
         ${practiceTarget}
         <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 text-center">
           <p class="text-purple-950 font-bold text-sm">${escapeHtml(description)}</p>
@@ -1522,6 +1739,12 @@ function renderModalStep() {
       });
     });
   } else if (appState.modalStep === 2) {
+    if (Array.isArray(lesson.sentences)) {
+      owlSpeak('Paso 2: escucha y arma cada oración usando las palabras practicadas.');
+      renderCumulativeSentenceStep(lesson, body);
+      body.scrollTop = 0;
+      return;
+    }
     const examples = lesson.examples || [{w: lesson.target, emoji: '✨'}];
     const targets = lesson.syllables || [lesson.target];
     const existingWords = new Set(examples.map(example => normalizePracticeText(example.w)));
@@ -1651,7 +1874,7 @@ function checkModalAnswer(selected, correct, btnId) {
   if (selected === correct) {
     playSound('correct');
     owlSpeak(`¡Muy bien! Has acertado.`);
-    document.getElementById(btnId).className = "bouncy bg-green-500 text-white border-4 border-green-700 font-black text-xl py-4 rounded-2xl shadow-md font-fredoka";
+    document.getElementById(btnId).className = "lesson-correct-pop bouncy bg-green-500 text-white border-4 border-green-700 font-black text-xl py-4 rounded-2xl shadow-md font-fredoka";
     document.querySelectorAll('#modal-game-area button').forEach(button => { button.disabled = true; });
     updateLessonStepCompletion(3, true);
     const lessonId = appState.currentModalLesson.id;
@@ -1688,6 +1911,10 @@ function openMilestoneGame(mId) {
   const m = ALL_LESSONS.find(l => l.id === mId);
   if (!m) return;
   if (!canAccessLesson(mId)) {
+    if (!appState.currentUser && !pedagogicalContent.isGuestLessonAccessible(mId)) {
+      promptGuestAccountForNextLessons();
+      return;
+    }
     owlSpeak('Completa las lecciones anteriores para desbloquear este desafío.');
     return;
   }

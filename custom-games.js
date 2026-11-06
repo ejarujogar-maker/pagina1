@@ -24,8 +24,16 @@ async function loadTeacherGames() {
   heading.className = 'font-black font-fredoka text-lg text-purple-950 mb-2';
   heading.textContent = 'Juegos creados';
   container.append(heading);
+  const studentId = document.getElementById('teacher-student-select').value;
+  if (!studentId) {
+    const empty = document.createElement('p');
+    empty.className = 'text-sm font-bold text-slate-500';
+    empty.textContent = 'Selecciona un alumno para consultar sus juegos asignados.';
+    container.append(empty);
+    return;
+  }
   try {
-    const response = await fetch('/api/teacher/games');
+    const response = await fetch(`/api/teacher/games?studentId=${encodeURIComponent(studentId)}`);
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'No se pudieron cargar los juegos creados.');
     if (!result.games.length) {

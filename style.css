@@ -15,6 +15,169 @@ body {
 .bouncy:active {
   transform: scale(0.92);
 }
+@keyframes lesson-correct-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(1.12) rotate(-2deg); }
+  75% { transform: scale(0.98) rotate(2deg); }
+  100% { transform: scale(1); }
+}
+@keyframes lesson-wiggle {
+  0%, 100% { transform: translateX(0); }
+  30% { transform: translateX(-6px); }
+  70% { transform: translateX(6px); }
+}
+.lesson-correct-pop { animation: lesson-correct-pop 520ms ease-out; }
+.lesson-wiggle { animation: lesson-wiggle 280ms ease-in-out; }
+.lesson-finish-pop { animation: lesson-correct-pop 700ms ease-out; }
+#modal-game-area [data-sentence-word]:not(:disabled):hover {
+  transform: translateY(-3px) rotate(-1deg);
+  box-shadow: 0 8px 18px #7c3aed24;
+}
+.cumulative-activity {
+  display: grid;
+  width: min(100%, 58rem);
+  min-width: 0;
+  margin: auto;
+  grid-template-rows: auto minmax(5.5rem, auto) auto minmax(2rem, auto);
+  align-items: center;
+  gap: clamp(0.75rem, 2.2vh, 1.25rem);
+  text-align: center;
+}
+.cumulative-activity-header {
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+}
+.cumulative-activity-progress {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0.35rem 0.9rem;
+  border-radius: 9999px;
+  background: #ede9fe;
+  color: #6b21a8;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+#modal-game-area .cumulative-activity h4 {
+  width: 100%;
+  font-size: clamp(1.6rem, 3.2vw, 2.4rem);
+  line-height: 1.1;
+}
+.cumulative-activity-instructions {
+  max-width: 38rem;
+  color: #475569;
+  font-size: clamp(0.9rem, 1.8vw, 1.05rem);
+  font-weight: 700;
+}
+.cumulative-listen-button,
+.cumulative-next-button {
+  display: inline-flex;
+  min-height: 2.9rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.2rem;
+  border-radius: 1rem;
+  background: #fbbf24;
+  color: #422006;
+  font-weight: 900;
+  box-shadow: 0 4px 0 #d97706;
+}
+.cumulative-sentence {
+  display: flex;
+  min-height: 5.5rem;
+  width: 100%;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem 0.6rem;
+  padding: clamp(0.75rem, 2.2vw, 1.25rem);
+  border: 2px dashed #c4b5fd;
+  border-radius: 1.25rem;
+  background: #fff;
+  color: #3b0764;
+  font-size: clamp(1.2rem, 3vw, 2rem);
+  font-weight: 900;
+  line-height: 1.25;
+}
+.cumulative-word-slot {
+  display: inline-flex;
+  min-width: 2.1em;
+  min-height: 1.45em;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.35em;
+  border-radius: 0.55rem;
+}
+.cumulative-word-slot:not(.is-filled) {
+  color: #c4b5fd;
+}
+.cumulative-word-slot.is-filled {
+  background: #ecfdf5;
+  color: #065f46;
+  animation: lesson-correct-pop 360ms ease-out;
+}
+.cumulative-word-bank {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.5rem), 1fr));
+  align-items: stretch;
+  gap: clamp(0.5rem, 1.5vw, 0.8rem);
+}
+.cumulative-word-button {
+  min-width: 0;
+  min-height: 3.8rem;
+  padding: 0.65rem 0.8rem;
+  overflow-wrap: anywhere;
+  border: 2px solid #bae6fd;
+  border-radius: 1rem;
+  background: #f0f9ff;
+  color: #075985;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-weight: 900;
+  box-shadow: 0 3px 0 #7dd3fc;
+  touch-action: manipulation;
+}
+.cumulative-word-button:disabled {
+  border-color: #a7f3d0;
+  background: #d1fae5;
+  color: #065f46;
+  box-shadow: none;
+  cursor: default;
+}
+.cumulative-feedback {
+  min-height: 2rem;
+  color: #5b21b6;
+  font-weight: 900;
+}
+.cumulative-next-button {
+  margin-inline: auto;
+  background: #10b981;
+  color: white;
+  box-shadow: 0 4px 0 #047857;
+}
+@media (max-width: 640px) {
+  .cumulative-activity {
+    grid-template-rows: auto minmax(4.5rem, auto) auto minmax(2rem, auto);
+    gap: 0.75rem;
+  }
+  .cumulative-word-bank {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 6rem), 1fr));
+  }
+  .cumulative-word-button {
+    min-height: 3.25rem;
+    padding: 0.55rem;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lesson-correct-pop,
+  .lesson-wiggle,
+  .lesson-finish-pop {
+    animation: none;
+  }
+}
 canvas {
   touch-action: none;
 }

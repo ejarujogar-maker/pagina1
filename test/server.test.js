@@ -322,6 +322,9 @@ test('registration requires delivered email confirmation, and password reset rev
     body: JSON.stringify({ role: 'profesor' })
   });
   assert.equal(forbiddenRoleChange.status, 403);
+  assert.equal((await fetch(`${origin}/api/admin/users/${account.user.id}/permanent`, {
+    method: 'DELETE', headers: { Cookie: studentCookie }
+  })).status, 403);
 
   const adminLogin = await request(origin, '/api/auth/login', {
     identifier: 'admin_test',
@@ -432,15 +435,79 @@ test('registration requires delivered email confirmation, and password reset rev
   assert.equal((await fetch(`${origin}/api/admin/users/${managedUser.id}/restore`, {
     method: 'POST', headers: { Cookie: adminCookie }
   })).status, 200);
+  const restoredLogin = await request(origin, '/api/auth/login', {
+    identifier: managedUser.username, password: 'Cuenta-Segura-2026!'
+  });
+  assert.equal(restoredLogin.status, 200);
+  const restoredCookie = restoredLogin.headers.getSetCookie()[0].split(';')[0];
+  const managedProgress = await fetch(`${origin}/api/progress`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Cookie: restoredCookie },
+    body: JSON.stringify({ xp: 75 })
+  });
+  assert.equal(managedProgress.status, 200);
+  const permanentDelete = await fetch(`${origin}/api/admin/users/${managedUser.id}/permanent`, {
+    method: 'DELETE',
+    headers: { Cookie: adminCookie }
+  });
+  assert.equal(permanentDelete.status, 200);
+  assert.equal((await permanentDelete.json()).permanentlyDeleted, true);
+  assert.equal((await (await fetch(`${origin}/api/auth/me`, {
+    headers: { Cookie: restoredCookie }
+  })).json()).user, null);
   assert.equal((await request(origin, '/api/auth/login', {
     identifier: managedUser.username, password: 'Cuenta-Segura-2026!'
-  })).status, 200);
+  })).status, 401);
+  const permanentList = await (await fetch(`${origin}/api/admin/users`, {
+    headers: { Cookie: adminCookie }
+  })).json();
+  assert.equal(permanentList.users.some(user => user.id === managedUser.id), false);
+  const permanentDatabase = new DatabaseSync(path.join(tempDirectory, 'test.db'));
+  try {
+    assert.equal(permanentDatabase.prepare('SELECT COUNT(*) AS count FROM users WHERE id = ?').get(managedUser.id).count, 0);
+    assert.equal(permanentDatabase.prepare('SELECT COUNT(*) AS count FROM progress WHERE user_id = ?').get(managedUser.id).count, 0);
+    assert.equal(permanentDatabase.prepare('SELECT COUNT(*) AS count FROM sessions WHERE user_id = ?').get(managedUser.id).count, 0);
+  } finally {
+    permanentDatabase.close();
+  }
 
   const selfDelete = await fetch(`${origin}/api/admin/users/${listed.currentUserId}`, {
     method: 'DELETE',
     headers: { Cookie: adminCookie }
   });
   assert.equal(selfDelete.status, 400);
+  assert.equal((await fetch(`${origin}/api/admin/users/${listed.currentUserId}/permanent`, {
+    method: 'DELETE', headers: { Cookie: adminCookie }
+  })).status, 400);
+
+  const logout = await fetch(`${origin}/api/auth/logout`, {
+    method: 'POST',
+    headers: { Cookie: studentCookie }
+  });
+  assert.equal(logout.status, 200);
+  assert.equal((await fetch(`${origin}/api/progress`, {
+    headers: { Cookie: studentCookie }
+  })).status, 401);
+  const relogin = await request(origin, '/api/auth/login', {
+    identifier: 'alumno_demo',
+    password: 'Nueva-Contraseña-segura-456'
+  });
+  assert.equal(relogin.status, 200);
+  const reloginCookie = relogin.headers.getSetCookie()[0].split(';')[0];
+  const reloginSession = await fetch(`${origin}/api/auth/me`, {
+    headers: { Cookie: reloginCookie }
+  });
+  const reloginAccount = await reloginSession.json();
+  assert.equal(reloginAccount.progress.xp, 225);
+  assert.deepEqual(reloginAccount.progress.completedLessons, ['l1', 'l2']);
+  assert.deepEqual(reloginAccount.progress.completedArcadeLevels, []);
+  const replayLevelTwo = await fetch(`${origin}/api/progress/complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: reloginCookie },
+    body: JSON.stringify({ type: 'arcade', gameId: 'bubbles', level: 2 })
+  });
+  assert.equal(replayLevelTwo.status, 403);
+
   const deleted = await fetch(`${origin}/api/admin/users/${account.user.id}`, {
     method: 'DELETE',
     headers: { Cookie: adminCookie }
@@ -504,9 +571,11 @@ test('login has generic errors and rate limiting; private project files stay una
   assert.equal((await fetch(`${origin}/custom-games.js`)).status, 200);
   assert.equal((await fetch(`${origin}/emoji-catalog.js`)).status, 200);
   assert.equal((await fetch(`${origin}/arcade-content.js`)).status, 200);
+  assert.equal((await fetch(`${origin}/pedagogical-content.js`)).status, 200);
   assert.equal((await fetch(`${origin}/style.css`)).status, 200);
   const homepage = await (await fetch(origin)).text();
   assert.ok(homepage.indexOf('arcade-content.js') < homepage.indexOf('script.js'));
+  assert.ok(homepage.indexOf('pedagogical-content.js') < homepage.indexOf('script.js'));
   assert.ok(homepage.indexOf('session-protection.js') < homepage.indexOf('script.js'));
   assert.match(homepage, />15:00</);
   assert.ok(homepage.indexOf('lesson-player.js') < homepage.indexOf('script.js'));
@@ -538,6 +607,7 @@ test('professors and superadministrators can complete any lesson and arcade leve
   const teacherCookie = login.headers.getSetCookie()[0].split(';')[0];
   for (const body of [
     { type: 'lesson', id: 'b47' },
+    { type: 'lesson', id: 'c-ma' },
     { type: 'arcade', gameId: 'fishing', level: 3 }
   ]) {
     const completion = await fetch(`${origin}/api/progress/complete`, {
@@ -547,6 +617,12 @@ test('professors and superadministrators can complete any lesson and arcade leve
     });
     assert.equal(completion.status, 200, JSON.stringify(await completion.json()));
   }
+  const teacherProgress = await (await fetch(`${origin}/api/progress`, {
+    headers: { Cookie: teacherCookie }
+  })).json();
+  assert.ok(teacherProgress.lessonResults.some(result =>
+    result.lessonId === 'c-ma' && result.category === 'Lecturas'
+  ));
 
   const studentRegistration = await request(origin, '/api/auth/register', {
     name: 'Alumno Personalizado',
@@ -577,18 +653,18 @@ test('professors and superadministrators can complete any lesson and arcade leve
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Cookie: teacherCookie },
     body: JSON.stringify({
-      studentId: student.id, title: 'Sílabas con MA', category: 'Sílabas',
-      subcategory: 'Sílabas directas', description: 'Escucha y lee la sílaba MA.',
-      target: 'MA', words: ['mamá', 'mapa', 'mano'], mapPosition: 3,
+      studentId: student.id, title: 'Práctica de la vocal A', category: 'Vocales',
+      subcategory: 'Vocales', description: 'Escucha y lee la vocal A.',
+      target: 'A', words: ['avión', 'abeja', 'árbol'], mapPosition: 1,
       wordFilters: { level: 'intermediate', syllables: 'two', targetPosition: 'start', structure: 'simple' }
     })
   });
   assert.equal(assigned.status, 201);
   const customLesson = (await assigned.json()).lesson;
   assert.deepEqual(customLesson.emojis, ['✨', '✨', '✨']);
-  assert.equal(customLesson.description, 'Escucha y lee la sílaba MA.');
-  assert.equal(customLesson.subcategory, 'Sílabas directas');
-  assert.equal(customLesson.mapPosition, 3);
+  assert.equal(customLesson.description, 'Escucha y lee la vocal A.');
+  assert.equal(customLesson.subcategory, 'Vocales');
+  assert.equal(customLesson.mapPosition, 1);
   assert.deepEqual(customLesson.wordFilters, {
     level: 'intermediate', syllables: 'two', targetPosition: 'start', structure: 'simple'
   });
@@ -596,14 +672,21 @@ test('professors and superadministrators can complete any lesson and arcade leve
   assert.equal((await fetch(`${origin}/api/teacher/lessons`, { headers: { Cookie: studentCookie } })).status, 403);
   const customList = await fetch(`${origin}/api/lessons/custom`, { headers: { Cookie: studentCookie } });
   assert.deepEqual((await customList.json()).lessons.map(lesson => lesson.id), [customLesson.id]);
+  const customBeforePrerequisite = await fetch(`${origin}/api/progress/complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: studentCookie },
+    body: JSON.stringify({ type: 'lesson', id: customLesson.id })
+  });
+  assert.equal(customBeforePrerequisite.status, 403);
+  assert.match((await customBeforePrerequisite.json()).error, /lección oficial/);
   const editCustomLesson = await fetch(`${origin}/api/teacher/lessons/${customLesson.id}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', Cookie: teacherCookie },
     body: JSON.stringify({
-      studentId: student.id, title: 'Sílabas MA editadas',
-      description: 'Descripción actualizada.', category: 'Sílabas',
-      subcategory: 'Sílabas directas', target: 'MA',
-      words: ['mamá', 'mapa', 'mano'], emojis: customLesson.emojis, mapPosition: 3,
+      studentId: student.id, title: 'Práctica A editada',
+      description: 'Descripción actualizada.', category: 'Vocales',
+      subcategory: 'Vocales', target: 'A',
+      words: ['avión', 'abeja', 'árbol'], emojis: customLesson.emojis, mapPosition: 1,
       theme: 'violet', wordFilters: { level: 'basic', syllables: 'two', targetPosition: 'start', structure: 'simple' }
     })
   });
@@ -637,6 +720,14 @@ test('professors and superadministrators can complete any lesson and arcade leve
       body: JSON.stringify({ type: 'lesson', id: 'l1', mistakes })
     });
     assert.equal(completion.status, 200);
+    if (mistakes === 1) {
+      const lessonAfterCustomPosition = await fetch(`${origin}/api/progress/complete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Cookie: studentCookie },
+        body: JSON.stringify({ type: 'lesson', id: 'l2' })
+      });
+      assert.equal(lessonAfterCustomPosition.status, 403);
+    }
   }
   const customCompletion = await fetch(`${origin}/api/progress/complete`, {
     method: 'POST',
@@ -697,9 +788,13 @@ test('professors and superadministrators can complete any lesson and arcade leve
     })
   });
   assert.equal(wholeWordBridgeAssignment.status, 400);
-  const createdLessons = await fetch(`${origin}/api/teacher/lessons`, { headers: { Cookie: teacherCookie } });
+  const noStudentLessons = await fetch(`${origin}/api/teacher/lessons`, { headers: { Cookie: teacherCookie } });
+  assert.deepEqual((await noStudentLessons.json()).lessons, []);
+  const createdLessons = await fetch(`${origin}/api/teacher/lessons?studentId=${student.id}`, { headers: { Cookie: teacherCookie } });
   assert.deepEqual((await createdLessons.json()).lessons.map(lesson => lesson.id), [customLesson.id]);
-  const createdGames = await fetch(`${origin}/api/teacher/games`, { headers: { Cookie: teacherCookie } });
+  const noStudentGames = await fetch(`${origin}/api/teacher/games`, { headers: { Cookie: teacherCookie } });
+  assert.deepEqual((await noStudentGames.json()).games, []);
+  const createdGames = await fetch(`${origin}/api/teacher/games?studentId=${student.id}`, { headers: { Cookie: teacherCookie } });
   const teacherGames = (await createdGames.json()).games;
   assert.deepEqual(new Set(teacherGames.map(game => game.id)), new Set([customGame.id, bridgeGame.id]));
   assert.equal(teacherGames.find(game => game.id === bridgeGame.id).type, 'bridge');
@@ -723,18 +818,18 @@ test('professors and superadministrators can complete any lesson and arcade leve
   });
   assert.equal(reportResponse.status, 200);
   const report = await reportResponse.json();
-  assert.deepEqual(report.sections.map(section => section.category), ['Vocales', 'Consonantes', 'Sílabas', 'Palabras']);
+  assert.deepEqual(report.sections.map(section => section.category), ['Vocales', 'Consonantes', 'Sílabas', 'Palabras', 'Lecturas']);
   const vowels = report.sections[0];
-  assert.equal(vowels.attempts, 2);
+  assert.equal(vowels.attempts, 3);
   assert.equal(vowels.repetitions, 1);
-  assert.equal(vowels.points, 50);
-  assert.equal(vowels.weightedScore, 83);
+  assert.equal(vowels.points, 60);
+  assert.equal(vowels.weightedScore, 67);
   assert.equal(report.customLessons[0].id, customLesson.id);
   assert.equal(report.lessons.find(lesson => lesson.lessonId === 'l1').latestStars, 3);
   assert.equal(report.lessons.find(lesson => lesson.lessonId === 'l1').firstStars, 2);
   assert.equal(report.lessons.find(lesson => lesson.lessonId === 'l1').retryStars, 3);
   assert.equal(report.lessons.find(lesson => lesson.lessonId === customLesson.id).latestStars, 1);
-  assert.equal(report.customLessons[0].mapPosition, 3);
+  assert.equal(report.customLessons[0].mapPosition, 1);
   assert.equal(report.customGames.find(game => game.id === customGame.id).attempts, 1);
 
   const unauthorizedReset = await request(origin, '/api/progress/reset', {
@@ -775,10 +870,32 @@ test('professors and superadministrators can complete any lesson and arcade leve
   })).json();
   assert.equal(afterAllReset.customGames.find(game => game.id === customGame.id).attempts, 0);
 
+  const syllableAssignment = await fetch(`${origin}/api/teacher/lessons`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: teacherCookie },
+    body: JSON.stringify({
+      studentId: student.id, title: 'Refuerzo de sílaba MA', category: 'Sílabas',
+      subcategory: 'Sílabas directas', target: 'MA',
+      words: ['mamá', 'mapa', 'mano'], mapPosition: 0
+    })
+  });
+  assert.equal(syllableAssignment.status, 201);
+  const syllableLesson = (await syllableAssignment.json()).lesson;
+  const lockedCustomLesson = await fetch(`${origin}/api/progress/complete`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Cookie: studentCookie },
+    body: JSON.stringify({ type: 'lesson', id: syllableLesson.id })
+  });
+  assert.equal(lockedCustomLesson.status, 403);
+  assert.match((await lockedCustomLesson.json()).error, /lección oficial/);
+
   const deleteLesson = await fetch(`${origin}/api/teacher/lessons/${customLesson.id}`, {
     method: 'DELETE', headers: { Cookie: teacherCookie }
   });
   assert.equal(deleteLesson.status, 200);
+  assert.equal((await fetch(`${origin}/api/teacher/lessons/${syllableLesson.id}`, {
+    method: 'DELETE', headers: { Cookie: teacherCookie }
+  })).status, 200);
   const deleteGame = await fetch(`${origin}/api/teacher/games/${customGame.id}`, {
     method: 'DELETE', headers: { Cookie: teacherCookie }
   });

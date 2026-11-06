@@ -51,3 +51,32 @@ test('sample selection changes when the random source changes', () => {
   }
   assert.notDeepEqual(firstSelection, secondSelection);
 });
+
+test('replaying each level can produce different letters, syllables, words, targets, and cards', () => {
+  const originalRandom = Math.random;
+  try {
+    for (const level of [1, 2, 3]) {
+      Math.random = () => 0;
+      const firstRun = [
+        arcadeContent.randomLetters(level, 3),
+        arcadeContent.randomSyllables(level, 3),
+        arcadeContent.randomSyllableWord(level),
+        arcadeContent.randomRainTarget(level),
+        arcadeContent.randomMemoryCards(level)
+      ];
+
+      Math.random = () => 0.999999;
+      const replay = [
+        arcadeContent.randomLetters(level, 3),
+        arcadeContent.randomSyllables(level, 3),
+        arcadeContent.randomSyllableWord(level),
+        arcadeContent.randomRainTarget(level),
+        arcadeContent.randomMemoryCards(level)
+      ];
+
+      firstRun.forEach((content, index) => assert.notDeepEqual(replay[index], content));
+    }
+  } finally {
+    Math.random = originalRandom;
+  }
+});

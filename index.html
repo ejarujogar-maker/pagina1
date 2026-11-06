@@ -15,7 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800;900;1000&display=swap" rel="stylesheet">
 
   <!-- Enlace al archivo CSS externo -->
-  <link rel="stylesheet" href="style.css?v=14">
+  <link rel="stylesheet" href="style.css?v=15">
 
   <script>
     tailwind.config = {
@@ -355,6 +355,7 @@
           <option value="">Selecciona un alumno</option>
         </select>
       </label>
+      <p id="teacher-student-required" class="mb-4 rounded-xl bg-amber-50 p-3 text-sm font-bold text-amber-900" role="status">Selecciona un alumno activo para habilitar la creación y consultar sus niveles y juegos.</p>
       <button type="button" onclick="enterStudentPreview()" class="mb-3 rounded-xl bg-emerald-100 px-4 py-2 font-black text-emerald-900">👀 Entrar a la vista del alumno</button>
       <nav class="flex flex-wrap gap-2 border-b-2 border-purple-100 pb-3 mb-4" aria-label="Módulos docentes">
         <button type="button" class="teacher-module-tab active" onclick="switchTeacherModule('report')">📊 Reporte</button>
@@ -382,7 +383,7 @@
             </label>
             <label id="progress-reset-section-wrap" class="hidden text-xs font-black text-slate-600">Sección
               <select id="progress-reset-section" class="mt-1 block rounded-xl border-2 border-rose-200 bg-white p-2.5 text-sm">
-                <option>Vocales</option><option>Consonantes</option><option>Sílabas</option><option>Palabras</option>
+                <option>Vocales</option><option>Consonantes</option><option>Sílabas</option><option>Palabras</option><option>Lecturas</option>
               </select>
             </label>
             <button type="button" onclick="resetStudentProgress()" class="rounded-xl bg-rose-600 px-4 py-3 font-black text-white shadow border-b-4 border-rose-800">Reiniciar seleccionado</button>
@@ -622,12 +623,13 @@
   </footer>
 
   <!-- Archivo de Script JS Externo -->
-  <script src="arcade-content.js?v=1"></script>
+  <script src="arcade-content.js?v=2"></script>
   <script src="emoji-catalog.js?v=3"></script>
   <script src="lesson-player.js?v=2"></script>
   <script src="custom-games.js?v=6"></script>
   <script src="teacher-dashboard.js?v=8"></script>
-  <script src="session-protection.js?v=3"></script>
-  <script src="script.js?v=13"></script>
+  <script src="pedagogical-content.js?v=4"></script>
+  <script src="session-protection.js?v=4"></script>
+  <script src="script.js?v=19"></script>
 </body>
 </html>
