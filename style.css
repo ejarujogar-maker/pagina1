@@ -244,7 +244,7 @@ canvas {
 .learning-node:hover {
   transform: translateY(-3px) scale(1.02);
 }
-.current-owl-marker {
+.current-monkey-marker {
   position: absolute;
   top: -1.6rem;
   right: 0.35rem;
@@ -258,9 +258,9 @@ canvas {
   background: #f59e0b;
   box-shadow: 0 5px 12px #78350f44;
   font-size: 1.8rem;
-  animation: owl-bob 1.8s ease-in-out infinite;
+  animation: monkey-bob 1.8s ease-in-out infinite;
 }
-@keyframes owl-bob {
+@keyframes monkey-bob {
   50% { transform: translateY(-5px) rotate(4deg); }
 }
 #lesson-modal > div {
@@ -269,6 +269,198 @@ canvas {
 }
 #lesson-modal > div > div:first-child {
   background-image: linear-gradient(115deg, #581c87, #6d28d9 58%, #4338ca);
+}
+.reading-lesson-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin: auto;
+  padding: clamp(0.25rem, 1.5vw, 1rem);
+}
+.reading-step-label {
+  border-radius: 9999px;
+  background: #f3e8ff;
+  padding: 0.5rem 1rem;
+  color: #7e22ce;
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.reading-step-title {
+  color: #3b0764;
+  font-family: Fredoka, sans-serif;
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  font-weight: 900;
+  text-align: center;
+}
+.reading-step-instructions {
+  color: #475569;
+  font-size: clamp(0.9rem, 2.4vw, 1.1rem);
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
+}
+.reading-passage {
+  width: 100%;
+  border: 2px solid #e9d5ff;
+  border-radius: 1.5rem;
+  background: white;
+  padding: clamp(1rem, 4vw, 2rem);
+  color: #334155;
+  font-size: clamp(1.1rem, 3vw, 1.5rem);
+  font-weight: 700;
+  line-height: 1.8;
+  text-align: left;
+}
+.reading-choice-grid {
+  display: grid;
+  width: 100%;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr));
+  gap: 0.75rem;
+}
+.reading-choice-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.65rem;
+  border: 2px solid #c4b5fd;
+  border-radius: 1.25rem;
+  background: white;
+  padding: 0.85rem;
+  box-shadow: 0 4px 10px #581c8714;
+}
+.reading-choice-emoji {
+  font-size: 2rem;
+}
+.reading-choice-word {
+  color: #3b0764;
+  font-family: Fredoka, sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+}
+.reading-answer-button,
+.reading-word-button,
+.reading-secondary-button,
+.reading-finish-button {
+  min-height: 2.75rem;
+  border-radius: 0.85rem;
+  padding: 0.6rem 1rem;
+  font-weight: 900;
+  touch-action: manipulation;
+}
+.reading-answer-button {
+  min-width: 3.5rem;
+  background: #f3e8ff;
+  color: #581c87;
+  font-size: 1.5rem;
+  line-height: 1;
+}
+.reading-answer-button.is-correct {
+  background: #bbf7d0;
+  color: #166534;
+}
+.reading-answer-button:disabled {
+  opacity: 0.75;
+}
+.reading-word-bank {
+  display: flex;
+  width: 100%;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+.reading-word-button {
+  border: 2px solid #c4b5fd;
+  background: white;
+  color: #581c87;
+  font-family: Fredoka, sans-serif;
+  font-size: 1.15rem;
+  box-shadow: 0 3px 0 #c4b5fd;
+}
+.reading-word-button:disabled {
+  opacity: 0.5;
+}
+.reading-word-button[draggable="true"] {
+  cursor: grab;
+}
+.reading-word-button.is-selected {
+  border-color: #7c3aed;
+  background: #ede9fe;
+  box-shadow: 0 3px 0 #7c3aed;
+  transform: translateY(-2px);
+}
+.reading-passage-cloze {
+  line-height: 2.2;
+}
+.reading-cloze-slot {
+  display: inline-block;
+  min-width: 4.5rem;
+  border-radius: 0.5rem;
+  background: #fef3c7;
+  padding: 0 0.35rem;
+  color: #6b21a8;
+  font-weight: 900;
+  text-align: center;
+  vertical-align: baseline;
+  border: 0;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.reading-cloze-slot.is-drop-target {
+  outline: 2px dashed #7c3aed;
+  outline-offset: 2px;
+}
+.reading-cloze-slot.is-selected {
+  background: #bbf7d0;
+}
+.reading-cloze-slot:disabled {
+  opacity: 1;
+  cursor: default;
+}
+.reading-secondary-button {
+  background: #f3e8ff;
+  color: #581c87;
+}
+.reading-finish-button {
+  background: #16a34a;
+  color: white;
+  min-width: 4.5rem;
+  min-height: 4.5rem;
+  padding: 0.35rem;
+  font-size: 2.5rem;
+  line-height: 1;
+}
+.reading-finish-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+.reading-writing-label {
+  color: #581c87;
+  font-weight: 900;
+}
+.reading-writing-input {
+  width: 100%;
+  max-width: 32rem;
+  min-height: 4rem;
+  border: 3px solid #a78bfa;
+  border-radius: 1rem;
+  background: white;
+  padding: 0.75rem 1rem;
+  color: #3b0764;
+  font-size: clamp(1.25rem, 3vw, 2rem);
+  font-weight: 800;
+  text-align: center;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+.reading-writing-input:focus {
+  border-color: #7c3aed;
+  outline: none;
+  box-shadow: 0 0 0 4px #c4b5fd80;
 }
 #modal-game-area {
   background-image:
@@ -958,5 +1150,299 @@ canvas {
   }
   #modal-game-area[data-step="2"] > div {
     margin-block: 0 auto;
+  }
+}
+
+@media (max-width: 640px) {
+  #lesson-modal {
+    align-items: stretch;
+    padding:
+      max(0.35rem, env(safe-area-inset-top))
+      max(0.35rem, env(safe-area-inset-right))
+      max(0.35rem, env(safe-area-inset-bottom))
+      max(0.35rem, env(safe-area-inset-left));
+  }
+  #lesson-modal > div {
+    width: 100%;
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 0.7rem);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 0.7rem);
+    min-height: 0;
+    border-radius: 1.1rem;
+  }
+  #lesson-modal > div > div:first-child {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.45rem;
+    padding: 0.55rem 0.65rem;
+  }
+  #lesson-modal > div > div:first-child > div:first-child {
+    min-width: 0;
+    gap: 0.45rem;
+  }
+  #modal-lesson-num {
+    width: 2.25rem;
+    height: 2.25rem;
+    flex: 0 0 auto;
+    border-radius: 0.75rem;
+  }
+  #modal-lesson-title {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    font-size: clamp(0.78rem, 3.5vw, 1rem);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #modal-lesson-subtitle {
+    font-size: 0.65rem;
+    line-height: 1.2;
+  }
+  #lesson-modal > div > div:first-child > div:nth-child(2) {
+    gap: 0.25rem;
+  }
+  #lesson-modal #modal-dot-1,
+  #lesson-modal #modal-dot-2,
+  #lesson-modal #modal-dot-3,
+  #lesson-modal #modal-dot-4 {
+    width: 0.55rem;
+    height: 0.55rem;
+    flex: 0 0 auto;
+  }
+  #lesson-modal > div > div:first-child > button {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+  }
+  #lesson-modal > div > div:nth-child(2) {
+    min-width: 0;
+    gap: 0.4rem;
+    padding: 0.4rem 0.55rem;
+  }
+  #lesson-modal > div > div:nth-child(2) > div {
+    flex: 1 1 auto;
+    min-width: 0;
+    gap: 0.35rem;
+  }
+  #lesson-modal > div > div:nth-child(2) > div > span:first-child {
+    flex: 0 0 auto;
+    font-size: 1.35rem;
+  }
+  #mascot-speaking-bubble {
+    max-width: 100%;
+    font-size: clamp(0.62rem, 2.7vw, 0.75rem);
+    line-height: 1.2;
+  }
+  #lesson-modal > div > div:nth-child(2) > button {
+    min-height: 2.25rem;
+    flex: 0 0 auto;
+    gap: 0.3rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 0.65rem;
+  }
+  #modal-game-area {
+    min-width: 0;
+    padding: clamp(0.65rem, 3vw, 1rem);
+  }
+  #modal-game-area > div,
+  #modal-game-area > section {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    gap: clamp(0.65rem, 2.5vh, 0.9rem);
+    overflow-wrap: anywhere;
+  }
+  #modal-game-area h4 {
+    font-size: clamp(1.25rem, 6vw, 1.8rem);
+    line-height: 1.1;
+  }
+  #modal-game-area .lesson-practice-choice {
+    min-width: 0;
+    min-height: 3.25rem;
+    padding: 0.65rem 0.85rem;
+    font-size: clamp(1.1rem, 5vw, 1.5rem);
+  }
+  #modal-game-area > div > button:not(#repeat-reading-btn):not([data-sound-index]) {
+    min-width: min(100%, 8rem);
+    min-height: 8rem;
+    max-width: 100%;
+    padding: 0.75rem;
+    font-size: clamp(2.5rem, 14vw, 4rem);
+  }
+  #modal-game-area > div > button:not(#repeat-reading-btn):not([data-sound-index]) span:last-child {
+    font-size: 0.65rem;
+  }
+  #modal-game-area .lesson-answer-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 5rem), 1fr));
+    gap: 0.55rem;
+  }
+  #modal-game-area .lesson-answer-grid > button,
+  #modal-game-area button[id^="modal-opt-"] {
+    min-height: 3.5rem;
+    padding: 0.55rem;
+    border-width: 3px;
+    border-radius: 1rem;
+    font-size: clamp(1.15rem, 6vw, 1.7rem);
+    overflow-wrap: anywhere;
+  }
+  #modal-game-area .lesson-word-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 8.5rem), 1fr));
+    gap: 0.55rem;
+  }
+  #modal-game-area [data-practice-card] {
+    gap: 0.35rem;
+    padding: 0.55rem;
+  }
+  #modal-game-area .reading-lesson-step {
+    gap: 0.7rem;
+    padding: 0;
+  }
+  #modal-game-area .reading-step-label {
+    max-width: 100%;
+    padding: 0.4rem 0.7rem;
+    font-size: 0.65rem;
+    text-align: center;
+  }
+  #modal-game-area .reading-passage {
+    padding: clamp(0.75rem, 4vw, 1.1rem);
+    border-radius: 1rem;
+    font-size: clamp(1rem, 4.5vw, 1.25rem);
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+  #modal-game-area .reading-choice-grid {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 7.25rem), 1fr));
+    gap: 0.5rem;
+  }
+  #modal-game-area .reading-choice-card {
+    gap: 0.4rem;
+    padding: 0.55rem 0.4rem;
+  }
+  #modal-game-area .reading-choice-emoji {
+    font-size: 1.6rem;
+  }
+  #modal-game-area .reading-choice-word {
+    font-size: clamp(0.9rem, 4vw, 1.05rem);
+  }
+  #modal-game-area .reading-answer-button {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.4rem;
+  }
+  #modal-game-area .reading-passage-cloze {
+    line-height: 2;
+  }
+  #modal-game-area .reading-cloze-slot {
+    min-width: 3.5rem;
+    max-width: 100%;
+    padding-inline: 0.2rem;
+    font-size: 0.95em;
+    overflow-wrap: anywhere;
+  }
+  #modal-game-area .reading-word-bank {
+    gap: 0.5rem;
+  }
+  #modal-game-area .reading-word-button {
+    max-width: 100%;
+    padding: 0.55rem 0.7rem;
+    font-size: clamp(0.95rem, 4.5vw, 1.1rem);
+    overflow-wrap: anywhere;
+  }
+  #modal-game-area .reading-writing-input {
+    min-height: 3.5rem;
+    font-size: 1.35rem;
+  }
+  #modal-game-area .cumulative-sentence {
+    gap: 0.35rem;
+    padding: 0.7rem;
+    font-size: clamp(1.05rem, 5vw, 1.45rem);
+    overflow-wrap: anywhere;
+  }
+  #modal-game-area .cumulative-word-bank {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+  }
+  #modal-game-area .cumulative-word-button {
+    min-height: 3rem;
+    padding: 0.5rem 0.35rem;
+    font-size: clamp(0.9rem, 4vw, 1.1rem);
+    overflow-wrap: anywhere;
+  }
+  #modal-game-area [data-practice-card] [data-word-answer] {
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    padding: 0.35rem;
+    font-size: 1.45rem;
+  }
+  #modal-step-indicator {
+    min-width: 0;
+    font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 380px) {
+  #lesson-modal > div > div:first-child {
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.3rem;
+  }
+  #lesson-modal > div > div:nth-child(2) {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+  #lesson-modal > div > div:nth-child(2) > button {
+    grid-column: 1 / -1;
+    justify-self: end;
+    white-space: normal;
+  }
+  #mascot-speaking-bubble {
+    width: 100%;
+    max-width: none;
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  #lesson-modal > div > div:last-child {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  #modal-step-indicator {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+  #modal-prev-btn,
+  #modal-next-btn {
+    min-height: 2.6rem;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.72rem;
+  }
+  #modal-prev-btn {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: start;
+  }
+  #modal-next-btn {
+    grid-column: 2;
+    grid-row: 2;
+  }
+}
+
+@media (max-height: 500px) and (orientation: landscape) {
+  #lesson-modal > div {
+    height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 0.4rem);
+    max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 0.4rem);
+  }
+  #lesson-modal > div > div:first-child,
+  #lesson-modal > div > div:nth-child(2),
+  #lesson-modal > div > div:last-child {
+    padding-block: 0.35rem;
+  }
+  #modal-game-area {
+    padding-block: 0.55rem;
+  }
+  #modal-game-area > div,
+  #modal-game-area > section {
+    gap: 0.5rem;
+  }
+  #modal-game-area > div > button:not(#repeat-reading-btn):not([data-sound-index]) {
+    min-height: 5rem;
   }
 }

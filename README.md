@@ -1,4 +1,4 @@
-# LecturaClub
+# Leópolis
 
 ## Requisitos
 
@@ -45,7 +45,7 @@ La página y el mapa de lecciones se pueden consultar sin cuenta. Los minijuegos
 
 Las lecciones registran cada intento, errores, estrellas obtenidas en el primer intento y en los reintentos, mejor resultado y puntos por sección. Un error reduce una estrella (hasta cero); el reporte conserva también el ranking de las lecciones más repetidas. Los alumnos ven una barra visual sin porcentajes; el profesor y el superadministrador pueden consultar el detalle en **Avances**.
 
-El panel **Avances** permite a profesores y superadministradores elegir un alumno, asignarle una lección con descripción, palabras, emojis y ubicación pedagógica, y consultar su reporte. Los emojis se eligen en un catálogo visual por categorías con búsqueda; la posición de cada lección puede configurarse antes de una lección del mapa o al final. Consonantes y sílabas tienen tres subsecciones; palabras ofrece filtros por dificultad, número de sílabas, posición del sonido y estructura. El profesor y el superadministrador también pueden editar las lecciones existentes del catálogo y las lecciones asignadas. Las lecciones personalizadas aparecen en el mapa del alumno y sus intentos se guardan en SQLite. El recorrido colorea en verde el tramo completado y coloca el búho sobre el próximo módulo.
+El panel **Avances** permite a profesores y superadministradores elegir un alumno, asignarle una lección con descripción, palabras, emojis y ubicación pedagógica, y consultar su reporte. Los emojis se eligen en un catálogo visual por categorías con búsqueda; la posición de cada lección puede configurarse antes de una lección del mapa o al final. Consonantes y sílabas tienen tres subsecciones; palabras ofrece filtros por dificultad, número de sílabas, posición del sonido y estructura. El profesor y el superadministrador también pueden editar las lecciones existentes del catálogo y las lecciones asignadas. Las lecciones personalizadas aparecen en el mapa del alumno y sus intentos se guardan en SQLite. El recorrido colorea en verde el tramo completado y coloca al Mono Sabio sobre el próximo módulo.
 
 En los módulos de creación, quien enseña puede probar lecciones y juegos sin guardar resultados, editar el contenido y abrir temporalmente la vista de un alumno. Además de rompecabezas y memoria de parejas, se puede crear **El puente de los bloques mágicos**: cada reto anuncia una palabra y el alumno elige o arrastra al puente su sílaba objetivo. El modo de alumno es de solo prueba: su progreso temporal no modifica la cuenta real. El panel docente y el superadministrador pueden gestionar el contenido de lecciones existente.
 
@@ -69,7 +69,7 @@ $env:SMTP_HOST = "smtp.ejemplo.com"
 $env:SMTP_PORT = "587"
 $env:SMTP_USER = "usuario-smtp"
 $env:SMTP_PASSWORD = "secreto-smtp"
-$env:SMTP_FROM = "LecturaClub <no-reply@ejemplo.com>"
+$env:SMTP_FROM = "Leópolis <no-reply@ejemplo.com>"
 ```
 
 La plantilla `.env.example` contiene los nombres de variables. No guardes contraseñas SMTP en el repositorio.

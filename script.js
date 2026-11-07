@@ -179,17 +179,17 @@ const BOOK_LESSONS = [
   makeSyllableLesson('b34', 'Sílabas inversas con R y M', ['ar', 'er', 'ir', 'or', 'ur', 'am', 'em', 'im', 'om', 'um'], ['árbol', 'arco', 'orden', 'imprenta'], '🌳'),
   makeSyllableLesson('b35', 'Diptongos', ['ia', 'ie', 'io', 'iu', 'ua', 'ue', 'ui', 'uo'], ['familia', 'hielo', 'lluvia', 'cuota'], '💧'),
   makeSyllableLesson('b36', 'Sílabas con Y al final', ['ay', 'ey', 'oy', 'uy'], ['hay', 'buey', 'estoy', 'Yaracuy'], '🐂'),
-  makeReadingLesson('b37', 'Lectura: Mi familia', ['familia', 'mamá', 'hogar'], 'En mi familia nos ayudamos. En casa compartimos, aprendemos y cuidamos unos de otros.', '🏡'),
-  makeReadingLesson('b38', 'Lectura: La casa', ['casa', 'patio', 'cocina'], 'Una casa tiene espacios para descansar y jugar. Cada día podemos ayudar a mantenerla ordenada.', '🏠'),
-  makeReadingLesson('b39', 'Lectura: Mi pueblo', ['pueblo', 'plaza', 'parque'], 'En mi pueblo hay una plaza, una escuela y muchas calles. Me gusta recorrerlo con mi familia.', '🏘️'),
+  makeReadingLesson('b37', 'Lectura: Mi familia', ['familia', 'casa', 'otros'], 'En mi familia nos ayudamos. En casa compartimos, aprendemos y cuidamos unos de otros.', '🏡'),
+  makeReadingLesson('b38', 'Lectura: La casa', ['casa', 'espacios', 'jugar'], 'Una casa tiene espacios para descansar y jugar. Cada día podemos ayudar a mantenerla ordenada.', '🏠'),
+  makeReadingLesson('b39', 'Lectura: Mi pueblo', ['pueblo', 'plaza', 'escuela'], 'En mi pueblo hay una plaza, una escuela y muchas calles. Me gusta recorrerlo con mi familia.', '🏘️'),
   makeReadingLesson('b40', 'Lectura: Los animales', ['vaca', 'oveja', 'caballo'], 'La vaca come hierba y la oveja nos da lana. El caballo corre por el campo.', '🐄'),
-  makeReadingLesson('b41', 'Lectura: La naturaleza', ['árbol', 'flores', 'agua'], 'Un árbol crece con agua y sol. En el jardín, las flores atraen mariposas.', '🌱'),
-  makeReadingLesson('b42', 'Lectura: La escuela', ['escuela', 'maestra', 'amigos'], 'En la escuela aprendemos a leer y escribir. También compartimos juegos con nuestros compañeros.', '🏫'),
-  makeReadingLesson('b43', 'Lectura: Los insectos', ['abeja', 'mariposa', 'zancudo'], 'La abeja visita las flores. Las mariposas vuelan entre las plantas del jardín.', '🦋'),
-  makeReadingLesson('b44', 'Lectura: Los alimentos', ['alimentos', 'frutas', 'leche'], 'Las frutas, el pan y la leche nos ayudan a crecer. Antes de comer, nos lavamos las manos.', '🍎'),
-  makeReadingLesson('b45', 'Lectura: Los juegos', ['juegos', 'pelota', 'amigos'], 'Jugar al aire libre es divertido. Respetamos los turnos y cuidamos a nuestros amigos.', '⚽'),
-  makeReadingLesson('b46', 'Lectura: Adivinanzas', ['viento', 'hojas', 'libro'], 'Tengo hojas y no soy árbol. Tengo páginas y muchas historias. ¿Qué soy?', '❓'),
-  makeReadingLesson('b47', 'Lectura: Las vacaciones', ['vacaciones', 'montaña', 'playa'], 'En vacaciones descanso, visito lugares nuevos y practico mis juegos favoritos.', '🏖️')
+  makeReadingLesson('b41', 'Lectura: La naturaleza', ['árbol', 'agua', 'flores'], 'Un árbol crece con agua y sol. En el jardín, las flores atraen mariposas.', '🌱'),
+  makeReadingLesson('b42', 'Lectura: La escuela', ['escuela', 'juegos', 'compañeros'], 'En la escuela aprendemos a leer y escribir. También compartimos juegos con nuestros compañeros.', '🏫'),
+  makeReadingLesson('b43', 'Lectura: Los insectos', ['abeja', 'flores', 'mariposas'], 'La abeja visita las flores. Las mariposas vuelan entre las plantas del jardín.', '🦋'),
+  makeReadingLesson('b44', 'Lectura: Los alimentos', ['frutas', 'pan', 'leche'], 'Las frutas, el pan y la leche nos ayudan a crecer. Antes de comer, nos lavamos las manos.', '🍎'),
+  makeReadingLesson('b45', 'Lectura: Los juegos', ['aire', 'turnos', 'amigos'], 'Jugar al aire libre es divertido. Respetamos los turnos y cuidamos a nuestros amigos.', '⚽'),
+  makeReadingLesson('b46', 'Lectura: Adivinanzas', ['hojas', 'páginas', 'historias'], 'Tengo hojas y no soy árbol. Tengo páginas y muchas historias. ¿Qué soy?', '❓'),
+  makeReadingLesson('b47', 'Lectura: Las vacaciones', ['vacaciones', 'lugares', 'juegos'], 'En vacaciones descanso, visito lugares nuevos y practico mis juegos favoritos.', '🏖️')
 ];
 
 ALL_LESSONS.push(...BOOK_LESSONS);
@@ -256,6 +256,8 @@ let arcadeTransitionTimer = null;
 let activeGameIntervals = [];
 let studentPreviewActive = false;
 let studentPreviewReturnState = null;
+let activeReadingWord = null;
+let selectedReadingClozeWord = null;
 window.isStudentPreviewActive = () => studentPreviewActive;
 
 // Elimina los temporizadores activos de minijuegos abiertos.
@@ -398,7 +400,7 @@ function updateStatsUI() {
 
   document.getElementById('header-progress-bar').style.width = pct + '%';
   document.getElementById('header-progress-text').innerText = hasFullAccess() ? `${pct}%` : 'Tu ruta';
-  document.getElementById('mobile-progress-text').innerText = hasFullAccess() ? `${pct}%` : '🦉';
+  document.getElementById('mobile-progress-text').innerText = hasFullAccess() ? `${pct}%` : '🐵';
   document.getElementById('header-progress-text').classList.toggle('hidden', !hasFullAccess());
 }
 
@@ -664,6 +666,7 @@ async function handleLogout(reason = null) {
   updateAuthUI();
   updateStatsUI();
   setAuthMode('login');
+  switchTab('map');
 
   if (forced) {
     openAuthModal();
@@ -673,8 +676,6 @@ async function handleLogout(reason = null) {
         ? `Tu sesión de aprendizaje alcanzó el límite de ${Math.round(STUDENT_SESSION_LIMIT_MS / 60000)} minutos. Inicia sesión para continuar.`
         : 'Tu sesión expiró o fue cerrada. Inicia sesión para continuar.';
     document.getElementById('auth-message').innerText = message;
-  } else {
-    switchTab('map');
   }
 
   try {
@@ -1137,12 +1138,12 @@ function playSound(type) {
 
 let currentInstructionText = "¡Hola amiguito! Elige una lección para comenzar.";
 
-// Hace hablar al búho con una voz sintetizada y callback opcional.
+// Hace hablar al mono con una voz sintetizada y callback opcional.
 
 function owlSpeak(text, callback = null) {
   currentInstructionText = text;
-  const owlText = document.getElementById('owl-speech-text');
-  if (owlText) owlText.innerText = text;
+  const monkeyText = document.getElementById('monkey-speech-text');
+  if (monkeyText) monkeyText.innerText = text;
 
   const bubble = document.getElementById('mascot-speaking-bubble');
   if (bubble) bubble.innerText = text;
@@ -1168,7 +1169,7 @@ function owlSpeak(text, callback = null) {
   }
 }
 
-// Encola un texto para que el búho lo lea.
+// Encola un texto para que el mono lo lea.
 
 function speakText(text) { owlSpeak(text); }
 
@@ -1416,7 +1417,7 @@ function renderContinuousMap() {
     if (item.isMilestone) {
       wrapper.innerHTML = `
         <div id="node-${item.id}" onclick="openMilestoneGame('${item.id}')" class="map-node ${isDone ? 'map-node-completed' : 'map-node-pending'} bouncy ${isLocked ? 'opacity-60 grayscale' : 'cursor-pointer'} rounded-3xl p-4 sm:p-5 shadow-xl border-b-8 flex items-center gap-4 max-w-xs sm:max-w-md w-full relative z-10">
-          ${isCurrent ? '<span class="current-owl-marker" aria-label="Desafío actual">🦉</span>' : ''}
+          ${isCurrent ? '<span class="current-monkey-marker" aria-label="Desafío actual">🐵</span>' : ''}
           <div class="w-14 h-14 bg-white/30 rounded-2xl flex items-center justify-center text-3xl text-amber-950 shadow-inner flex-shrink-0">
             <i class="fa-solid fa-trophy"></i>
           </div>
@@ -1432,7 +1433,7 @@ function renderContinuousMap() {
         <div id="node-${item.id}" data-theme="${item.theme || 'violet'}" onclick="openLessonModal('${item.id}')" class="learning-node map-node ${isDone ? 'map-node-completed' : 'map-node-pending'} bouncy ${isLocked ? 'opacity-60 grayscale' : 'cursor-pointer'} rounded-3xl p-3 sm:p-4 border-4 ${isCurrent && !isDone ? 'ring-4 ring-amber-200' : ''} shadow-lg hover:shadow-2xl flex items-center gap-3 sm:gap-4 w-56 sm:w-64 relative z-10 group">
           ${isDone ? '<div class="absolute -top-2 -right-2 bg-green-500 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm shadow"><i class="fa-solid fa-check"></i></div>' : ''}
           ${isLocked ? '<div class="absolute -top-2 -right-2 bg-slate-700 text-white w-7 h-7 rounded-full flex items-center justify-center text-sm shadow"><i class="fa-solid fa-lock"></i></div>' : ''}
-          ${isCurrent ? '<span class="current-owl-marker" aria-label="Lección actual">🦉</span>' : ''}
+          ${isCurrent ? '<span class="current-monkey-marker" aria-label="Lección actual">🐵</span>' : ''}
           <div class="node-letter w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-purple-600 to-pink-500 text-white font-black text-2xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform flex-shrink-0 font-fredoka">
             ${item.target.length > 4 ? '💬' : item.target}
           </div>
@@ -1541,8 +1542,53 @@ function shuffleValues(values) {
 // Reinicia los pasos de una lección para volver a empezar.
 
 function resetLessonStepProgress() {
-  appState.modalStepComplete = [false, false, false];
+  appState.modalStepComplete = Array.from({ length: getLessonStepCount(appState.currentModalLesson) }, () => false);
   appState.modalStepItems = new Set();
+  activeReadingWord = null;
+  selectedReadingClozeWord = null;
+}
+
+function isReadingLesson(lesson) {
+  return typeof lesson?.readingText === 'string' && lesson.readingText.trim().length > 0;
+}
+
+function usesFourStepReadingFlow(lesson) {
+  if (!isReadingLesson(lesson)) return false;
+  const order = pedagogicalContent.learningPathOrder;
+  const sixthChallengeIndex = order.indexOf('m6');
+  const lessonIndex = order.indexOf(lesson.id);
+  return sixthChallengeIndex >= 0 && lessonIndex > sixthChallengeIndex;
+}
+
+function getLessonStepCount(lesson) {
+  return usesFourStepReadingFlow(lesson) ? 4 : 3;
+}
+
+function getReadingVocabulary(lesson) {
+  const textTokens = lesson.readingText.match(/\p{L}+/gu) || [];
+  const textWords = new Map(textTokens.map(word => [normalizePracticeText(word), word]));
+  const vocabulary = [];
+  const included = new Set();
+
+  (lesson.examples || []).forEach(example => {
+    const normalized = normalizePracticeText(example.w);
+    if (textWords.has(normalized) && !included.has(normalized)) {
+      vocabulary.push({ w: example.w, emoji: example.emoji || '📖' });
+      included.add(normalized);
+    }
+  });
+
+  const commonWords = new Set(['a', 'al', 'algunos', 'como', 'con', 'cada', 'de', 'del', 'el', 'en',
+    'es', 'la', 'las', 'lo', 'los', 'mi', 'mis', 'nos', 'o', 'para', 'que', 'se', 'su', 'un', 'una', 'unos', 'y']);
+  textTokens.forEach(word => {
+    const normalized = normalizePracticeText(word);
+    if (!included.has(normalized) && !commonWords.has(normalized) && normalized.length > 2) {
+      vocabulary.push({ w: word.toLocaleLowerCase('es'), emoji: getWordImage(word) });
+      included.add(normalized);
+    }
+  });
+
+  return vocabulary.slice(0, 3);
 }
 
 // Marca un paso de la lección como completado o pendiente.
@@ -1606,7 +1652,7 @@ function renderCumulativeSentenceStep(lesson, body) {
     !appState.modalStepItems.has(`2:${index}`)
   );
   if (sentenceIndex < 0) {
-    body.innerHTML = '<div class="lesson-finish-pop rounded-3xl bg-emerald-50 p-8 text-center"><div class="text-6xl">🌟🦉🌟</div><h4 class="mt-4 text-2xl font-black text-emerald-800">¡Todas las oraciones listas!</h4><p class="mt-2 font-bold text-emerald-700">Has leído y armado cada oración.</p></div>';
+    body.innerHTML = '<div class="lesson-finish-pop rounded-3xl bg-emerald-50 p-8 text-center"><div class="text-6xl">🌟🐵🌟</div><h4 class="mt-4 text-2xl font-black text-emerald-800">¡Todas las oraciones listas!</h4><p class="mt-2 font-bold text-emerald-700">Has leído y armado cada oración.</p></div>';
     updateLessonStepCompletion(2, true);
     return;
   }
@@ -1695,34 +1741,49 @@ function renderCumulativeSentenceStep(lesson, body) {
 function renderModalStep() {
   const lesson = appState.currentModalLesson;
   if (!lesson) return;
+  const stepCount = getLessonStepCount(lesson);
   const body = document.getElementById('modal-game-area');
   body.dataset.step = String(appState.modalStep);
   document.getElementById('modal-lesson-title').innerText = `${lesson.name}`;
   const isRepeat = lessonHasBeenCompleted(lesson);
   document.getElementById('modal-lesson-subtitle').innerText = `${lesson.category}${isRepeat ? ' · REPASO' : ''}`;
 
-  for (let i = 1; i <= 3; i++) {
-    document.getElementById(`modal-dot-${i}`).className = i <= appState.modalStep ? 'w-3.5 h-3.5 rounded-full bg-purple-600' : 'w-3.5 h-3.5 rounded-full bg-slate-200';
+  for (let i = 1; i <= 4; i++) {
+    const dot = document.getElementById(`modal-dot-${i}`);
+    dot.className = `w-3.5 h-3.5 rounded-full ${i <= appState.modalStep ? 'bg-purple-600' : 'bg-slate-200'}`;
+    dot.classList.toggle('hidden', i > stepCount);
   }
 
-  document.getElementById('modal-step-indicator').innerText = `Paso ${appState.modalStep} de 3`;
+  document.getElementById('modal-step-indicator').innerText = `Paso ${appState.modalStep} de ${stepCount}`;
   document.getElementById('modal-prev-btn').classList.toggle('hidden', appState.modalStep === 1);
-  document.getElementById('modal-next-btn').innerText = appState.modalStep === 3 ? 'Terminar' : 'Siguiente';
+  document.getElementById('modal-next-btn').innerText = appState.modalStep === stepCount ? 'Terminar' : 'Siguiente';
   document.getElementById('modal-next-btn').disabled = !appState.modalStepComplete[appState.modalStep - 1];
   document.getElementById('modal-next-btn').classList.toggle('opacity-50', !appState.modalStepComplete[appState.modalStep - 1]);
   document.getElementById('modal-next-btn').classList.toggle('cursor-not-allowed', !appState.modalStepComplete[appState.modalStep - 1]);
 
+  if (usesFourStepReadingFlow(lesson)) {
+    renderReadingLessonStep(lesson, body);
+    body.scrollTop = 0;
+    return;
+  }
+
   if (appState.modalStep === 1) {
     const description = lesson.description || lesson.mouth || 'Escucha con atención el sonido de esta lección.';
-    const usesSyllableTargets = lesson.category === 'Sílabas';
-    owlSpeak(`Paso 1: descubrimos el sonido. ${description} ${usesSyllableTargets ? 'Escucha todas las sílabas y tócalas para oírlas.' : `Toca la letra ${lesson.target} para escucharla.`}`);
-    const practiceTarget = lesson.syllables
-      ? `<div class="flex flex-wrap justify-center gap-2">${lesson.syllables.map((syllable, index) => `<button type="button" data-sound-index="${index}" class="lesson-practice-choice bouncy bg-gradient-to-tr from-purple-600 to-pink-500 text-white rounded-2xl px-3 py-3 font-black font-fredoka">${escapeHtml(syllable)}</button>`).join('')}</div>`
+    const syllablesToPractice = lesson.syllables || (lesson.kind === 'cumulative' ? [lesson.target] : null);
+    const usesSyllableTargets = Boolean(syllablesToPractice);
+    const stepInstructions = usesSyllableTargets
+      ? syllablesToPractice.length === 1
+        ? `Toca la sílaba ${syllablesToPractice[0]} para escucharla.`
+        : 'Escucha todas las sílabas y tócalas para oírlas.'
+      : `Toca la letra ${lesson.target} para escucharla.`;
+    owlSpeak(`Paso 1: descubrimos el sonido. ${description} ${stepInstructions}`);
+    const practiceTarget = syllablesToPractice
+      ? `<div class="flex flex-wrap justify-center gap-2">${syllablesToPractice.map((syllable, index) => `<button type="button" data-sound-index="${index}" class="lesson-practice-choice bouncy bg-gradient-to-tr from-purple-600 to-pink-500 text-white rounded-2xl px-3 py-3 font-black font-fredoka">${escapeHtml(syllable)}</button>`).join('')}</div>`
       : `<button type="button" data-sound-index="0" class="lesson-practice-choice bouncy inline-flex flex-col items-center justify-center min-w-32 min-h-32 px-4 bg-gradient-to-tr from-purple-600 to-pink-500 text-white rounded-3xl shadow-xl mx-auto border-4 border-yellow-300"><span class="text-3xl font-black font-fredoka">${escapeHtml(lesson.target)}</span><span class="text-[10px] font-black text-yellow-200 mt-1 uppercase"><i class="fa-solid fa-volume-high"></i> Toca para oír</span></button>`;
     body.innerHTML = `
       <div class="text-center space-y-4 my-auto w-full max-w-[70rem]">
         <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-black uppercase">Paso 1: Descubrimos el Sonido</span>
-        <h4 class="text-2xl font-black text-purple-950 font-fredoka">${usesSyllableTargets ? 'Escucha las sílabas' : 'Escucha la letra'}</h4>
+        <h4 class="text-2xl font-black text-purple-950 font-fredoka">${usesSyllableTargets ? syllablesToPractice.length === 1 ? 'Escucha la sílaba' : 'Escucha las sílabas' : 'Escucha la letra'}</h4>
         ${practiceTarget}
         <div class="bg-purple-50 rounded-2xl p-4 border-2 border-purple-200 text-center">
           <p class="text-purple-950 font-bold text-sm">${escapeHtml(description)}</p>
@@ -1732,10 +1793,10 @@ function renderModalStep() {
     body.querySelectorAll('[data-sound-index]').forEach(button => {
       button.addEventListener('click', () => {
         const index = Number(button.dataset.soundIndex);
-        const sound = lesson.syllables?.[index] || lesson.target;
+        const sound = syllablesToPractice?.[index] || lesson.target;
         owlSpeak(sound);
         button.classList.add('ring-4', 'ring-emerald-300');
-        markLessonStepItem(1, index, lesson.syllables?.length || 1);
+        markLessonStepItem(1, index, syllablesToPractice?.length || 1);
       });
     });
   } else if (appState.modalStep === 2) {
@@ -1825,11 +1886,12 @@ function renderModalStep() {
   } else if (appState.modalStep === 3) {
     const options = lesson.options || [lesson.target, 'X', 'O'];
     const shuffled = shuffleValues([...new Set(options)]);
-    owlSpeak(`Paso 3: práctica guiada. Busca la letra ${lesson.target} y toca la opción correcta.`);
+    const targetKind = lesson.syllables || lesson.kind === 'cumulative' ? 'sílaba' : 'letra';
+    owlSpeak(`Paso 3: práctica guiada. Busca la ${targetKind} ${lesson.target} y toca la opción correcta.`);
     body.innerHTML = `
       <div class="text-center space-y-4 my-auto w-full max-w-[70rem]">
         <span class="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-xs font-black uppercase">Paso 3: Práctica Guiada</span>
-        <h4 class="text-2xl font-black text-purple-950 font-fredoka">Busca "${lesson.target}"</h4>
+        <h4 class="text-2xl font-black text-purple-950 font-fredoka">Busca la ${targetKind} "${lesson.target}"</h4>
         <div class="lesson-answer-grid grid gap-3 pt-2">
           ${shuffled.map((opt, i) => `
             <button id="modal-opt-${i}" onclick="checkModalAnswer('${opt}', '${lesson.target}', 'modal-opt-${i}')" class="bouncy bg-white border-4 border-purple-300 text-purple-950 font-black text-xl py-4 rounded-2xl shadow-md font-fredoka">
@@ -1858,14 +1920,280 @@ function nextLessonStep() {
     }
     return;
   }
-  if (appState.modalStep < 3) {
+  const lesson = appState.currentModalLesson;
+  const stepCount = getLessonStepCount(lesson);
+  if (appState.modalStep < stepCount) {
     appState.modalStep++;
     renderModalStep();
+  } else if (isReadingLesson(lesson)) {
+    completeCurrentLesson();
   }
 }
 // Vuelve al paso anterior de la lección.
 function prevLessonStep() {
   if (appState.modalStep > 1) { appState.modalStep--; renderModalStep(); }
+}
+
+function renderReadingLessonStep(lesson, body, announceInstruction = true) {
+  const vocabulary = getReadingVocabulary(lesson);
+  if (vocabulary.length < 3) {
+    throw new Error(`La lectura "${lesson.name}" necesita al menos tres palabras para practicar.`);
+  }
+
+  if (appState.modalStep === 1) {
+    owlSpeak(`Paso 1: lee con atención el texto. ${lesson.readingText}`);
+    body.innerHTML = `
+      <section class="reading-lesson-step w-full max-w-4xl" aria-labelledby="reading-step-title">
+        <span class="reading-step-label">Paso 1: Lectura</span>
+        <h4 id="reading-step-title" class="reading-step-title">${escapeHtml(lesson.name)}</h4>
+        <button id="reading-listen-button" type="button" class="bouncy rounded-2xl bg-amber-400 px-5 py-3 font-black text-slate-950">
+          🔊 Escuchar lectura
+        </button>
+        <p class="reading-passage" lang="es">${escapeHtml(lesson.readingText)}</p>
+        <p class="reading-step-instructions">Lee el texto con calma. Después, marca que ya lo leíste.</p>
+        <button id="reading-mark-read" type="button" aria-label="Confirmar que ya leí el texto"
+          class="bouncy rounded-2xl bg-emerald-500 px-5 py-3 text-5xl font-black text-white" title="Ya leí el texto">
+          👍
+        </button>
+      </section>
+    `;
+    document.getElementById('reading-listen-button').addEventListener('click', () => owlSpeak(lesson.readingText));
+    document.getElementById('reading-mark-read').addEventListener('click', () => {
+      playSound('correct');
+      updateLessonStepCompletion(1, true);
+      owlSpeak('¡Muy bien! Ya leíste el texto.');
+    });
+    return;
+  }
+
+  if (appState.modalStep === 2) {
+    const knownWords = new Set(vocabulary.map(item => normalizePracticeText(item.w)));
+    const textWords = new Set((lesson.readingText.match(/\p{L}+/gu) || [])
+      .map(normalizePracticeText));
+    const distractors = shuffleValues(Object.keys(WORD_IMAGES)
+      .filter(word => !knownWords.has(normalizePracticeText(word)))
+      .filter(word => !textWords.has(normalizePracticeText(word))))
+      .slice(0, 3)
+      .map(word => ({ w: word, emoji: getWordImage(word), isMentioned: false }));
+    const choices = [...vocabulary.map(item => ({ ...item, isMentioned: true })), ...distractors];
+
+    owlSpeak('Paso 2: identifica cuáles cosas se mencionan en la lectura. Usa el cuadro marcado si aparece y la equis si no aparece.');
+    body.innerHTML = `
+      <section class="reading-lesson-step w-full max-w-5xl" aria-labelledby="reading-step-title">
+        <span class="reading-step-label">Paso 2: Comprensión</span>
+        <h4 id="reading-step-title" class="reading-step-title">¿Qué se menciona en la lectura?</h4>
+        <p class="reading-step-instructions">Para cada palabra, indica si aparece en el texto.</p>
+        <div class="reading-choice-grid">
+          ${choices.map((item, index) => {
+            const answered = appState.modalStepItems.has(`reading-identify:${index}`);
+            return `
+              <article class="reading-choice-card" data-reading-choice="${index}">
+                <span class="reading-choice-emoji" aria-hidden="true">${escapeHtml(item.emoji)}</span>
+                <span class="reading-choice-word">${escapeHtml(item.w)}</span>
+                <div class="flex flex-wrap justify-center gap-2">
+                  <button type="button" data-reading-answer="${index}:yes" ${answered ? 'disabled' : ''}
+                    class="reading-answer-button" aria-label="Sí se menciona ${escapeHtml(item.w)}" title="Sí se menciona">☑</button>
+                  <button type="button" data-reading-answer="${index}:no" ${answered ? 'disabled' : ''}
+                    class="reading-answer-button" aria-label="No se menciona ${escapeHtml(item.w)}" title="No se menciona">☒</button>
+                </div>
+              </article>
+            `;
+          }).join('')}
+        </div>
+      </section>
+    `;
+
+    body.querySelectorAll('[data-reading-answer]').forEach(button => {
+      button.addEventListener('click', () => {
+        const [rawIndex, answer] = button.dataset.readingAnswer.split(':');
+        const index = Number(rawIndex);
+        const selected = choices[index];
+        const correct = (answer === 'yes') === selected.isMentioned;
+        if (!correct) {
+          appState.currentMistakes++;
+          playSound('wrong');
+          owlSpeak(`Inténtalo otra vez. ¿${selected.w} aparece en el texto?`);
+          return;
+        }
+        appState.modalStepItems.add(`reading-identify:${index}`);
+        body.querySelectorAll(`[data-reading-answer^="${index}:"]`).forEach(option => {
+          option.disabled = true;
+          const isSelected = option.dataset.readingAnswer.endsWith(`:${answer}`);
+          option.classList.toggle('is-correct', isSelected);
+        });
+        playSound('correct');
+        const allAnswered = choices.every((_, choiceIndex) =>
+          appState.modalStepItems.has(`reading-identify:${choiceIndex}`)
+        );
+        if (allAnswered) updateLessonStepCompletion(2, true);
+      });
+    });
+    return;
+  }
+
+  if (appState.modalStep === 3) {
+    const tokens = lesson.readingText.match(/\p{L}+|[^\p{L}]+/gu) || [];
+    const blankWords = vocabulary.map(item => normalizePracticeText(item.w));
+    const slotForToken = new Map();
+    const tokenForSlot = new Map();
+    tokens.forEach((token, tokenIndex) => {
+      const slotIndex = blankWords.findIndex((word, index) =>
+        word === normalizePracticeText(token) && !tokenForSlot.has(index)
+      );
+      if (slotIndex >= 0) {
+        slotForToken.set(tokenIndex, slotIndex);
+        tokenForSlot.set(slotIndex, tokenIndex);
+      }
+    });
+    if (tokenForSlot.size !== vocabulary.length) {
+      throw new Error(`No se encontraron todas las palabras de práctica en la lectura "${lesson.name}".`);
+    }
+    const filled = index => appState.modalStepItems.has(`reading-cloze:${index}`);
+    const passage = tokens.map((token, tokenIndex) => {
+      const slotIndex = slotForToken.get(tokenIndex);
+      if (slotIndex === undefined) return escapeHtml(token);
+      const isFilled = filled(slotIndex);
+      return `<button type="button" data-reading-cloze-slot="${slotIndex}" ${isFilled ? 'disabled' : ''}
+        aria-label="${isFilled ? `Palabra ${escapeHtml(vocabulary[slotIndex].w)} colocada` : `Espacio para la palabra ${escapeHtml(vocabulary[slotIndex].w)}`}"
+        class="reading-cloze-slot ${selectedReadingClozeWord === slotIndex ? 'is-selected' : ''}">
+        ${isFilled ? escapeHtml(token) : '______'}
+      </button>`;
+    }).join('');
+
+    const instruction = 'Paso 3: arrastra cada palabra al espacio correspondiente. En pantallas táctiles, toca una palabra y luego su espacio.';
+    body.innerHTML = `
+      <section class="reading-lesson-step w-full max-w-5xl" aria-labelledby="reading-step-title">
+        <span class="reading-step-label">Paso 3: Completa el texto</span>
+        <h4 id="reading-step-title" class="reading-step-title">Completa la lectura</h4>
+        <p class="reading-passage reading-passage-cloze" lang="es">${passage}</p>
+        <p id="reading-cloze-feedback" class="reading-step-instructions" role="status" aria-live="polite">
+          ${escapeHtml(instruction)}
+        </p>
+        <div class="reading-word-bank" aria-label="Palabras para completar">
+          ${shuffleValues(vocabulary.map((item, index) => ({ ...item, index }))).map(item => `
+            <button type="button" draggable="true" data-reading-cloze-word="${item.index}"
+              ${filled(item.index) ? 'disabled' : ''} class="reading-word-button">
+              ${escapeHtml(item.w)}
+            </button>
+          `).join('')}
+        </div>
+      </section>
+    `;
+    currentInstructionText = instruction;
+    if (announceInstruction) owlSpeak(instruction);
+
+    const placeWord = (wordIndex, slotIndex) => {
+      if (!Number.isInteger(wordIndex) || wordIndex < 0 || wordIndex >= vocabulary.length ||
+          !Number.isInteger(slotIndex) || slotIndex < 0 || slotIndex >= vocabulary.length || filled(slotIndex)) return;
+      if (wordIndex !== slotIndex) {
+        appState.currentMistakes++;
+        playSound('wrong');
+        document.getElementById('reading-cloze-feedback').textContent =
+          'Esa palabra no corresponde a este espacio. Prueba con otra.';
+        return;
+      }
+      appState.modalStepItems.add(`reading-cloze:${slotIndex}`);
+      selectedReadingClozeWord = null;
+      playSound('correct');
+      const complete = vocabulary.every((_, index) => filled(index));
+      renderReadingLessonStep(lesson, body, false);
+      document.getElementById('reading-cloze-feedback').textContent = '¡Correcto! La palabra quedó en su lugar.';
+      if (complete) updateLessonStepCompletion(3, true);
+    };
+
+    body.querySelectorAll('[data-reading-cloze-word]').forEach(button => {
+      button.addEventListener('dragstart', event => {
+        if (button.disabled) {
+          event.preventDefault();
+          return;
+        }
+        event.dataTransfer.setData('text/plain', button.dataset.readingClozeWord);
+        event.dataTransfer.effectAllowed = 'move';
+      });
+      button.addEventListener('click', () => {
+        const index = Number(button.dataset.readingClozeWord);
+        selectedReadingClozeWord = selectedReadingClozeWord === index ? null : index;
+        body.querySelectorAll('[data-reading-cloze-word]').forEach(wordButton => {
+          wordButton.classList.toggle('is-selected', Number(wordButton.dataset.readingClozeWord) === selectedReadingClozeWord);
+        });
+        body.querySelectorAll('[data-reading-cloze-slot]').forEach(slot => {
+          slot.classList.toggle('is-drop-target', selectedReadingClozeWord !== null);
+        });
+        document.getElementById('reading-cloze-feedback').textContent =
+          selectedReadingClozeWord === null ? instruction : `Toca el espacio de «${vocabulary[index].w}».`;
+      });
+    });
+
+    body.querySelectorAll('[data-reading-cloze-slot]').forEach(slot => {
+      slot.addEventListener('dragover', event => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+      });
+      slot.addEventListener('drop', event => {
+        event.preventDefault();
+        const wordIndex = Number(event.dataTransfer.getData('text/plain'));
+        placeWord(wordIndex, Number(slot.dataset.readingClozeSlot));
+      });
+      slot.addEventListener('click', () => {
+        if (selectedReadingClozeWord === null) return;
+        placeWord(selectedReadingClozeWord, Number(slot.dataset.readingClozeSlot));
+      });
+    });
+    return;
+  }
+
+  if (appState.modalStep === 4) {
+    renderReadingWritingStep(lesson, vocabulary, body);
+  }
+}
+
+function renderReadingWritingStep(lesson, vocabulary, body) {
+  if (!activeReadingWord) {
+    activeReadingWord = vocabulary[Math.floor(Math.random() * vocabulary.length)].w;
+  }
+
+  const instruction = `Paso 4: escribe correctamente la palabra «${activeReadingWord}» en el recuadro.`;
+  currentInstructionText = instruction;
+  owlSpeak(instruction);
+  body.innerHTML = `
+    <section class="reading-lesson-step w-full max-w-4xl" aria-labelledby="reading-step-title">
+      <span class="reading-step-label">Paso 4: Escribe una palabra</span>
+      <h4 id="reading-step-title" class="reading-step-title">Escribe «${escapeHtml(activeReadingWord)}»</h4>
+      <p class="reading-step-instructions">Escribe exactamente la palabra asignada. Respeta sus letras y tildes.</p>
+      <label class="reading-writing-label" for="reading-writing-input">Tu respuesta</label>
+      <input id="reading-writing-input" type="text" autocomplete="off" autocapitalize="none" spellcheck="false"
+        aria-describedby="reading-writing-feedback" class="reading-writing-input" aria-label="Escribe la palabra ${escapeHtml(activeReadingWord)}">
+      <button id="reading-writing-done" type="button" aria-label="Comprobar palabra escrita" title="Comprobar palabra"
+        disabled class="reading-finish-button">👍</button>
+      <p id="reading-writing-feedback" class="reading-step-instructions" role="status" aria-live="polite">
+        Escribe la palabra exactamente como aparece arriba.
+      </p>
+    </section>
+  `;
+
+  const input = document.getElementById('reading-writing-input');
+  const finishButton = document.getElementById('reading-writing-done');
+  const feedback = document.getElementById('reading-writing-feedback');
+  const normalizedTarget = activeReadingWord.normalize('NFC').toLocaleLowerCase('es');
+  input.addEventListener('input', () => {
+    const matches = input.value.trim().normalize('NFC').toLocaleLowerCase('es') === normalizedTarget;
+    finishButton.disabled = !matches;
+    feedback.textContent = matches
+      ? '¡Correcto! La palabra está escrita correctamente.'
+      : 'Revisa las letras y la tilde de la palabra asignada.';
+  });
+  finishButton.addEventListener('click', () => {
+    if (input.value.trim().normalize('NFC').toLocaleLowerCase('es') !== normalizedTarget) {
+      finishButton.disabled = true;
+      feedback.textContent = 'La palabra no coincide. Inténtalo otra vez.';
+      appState.currentMistakes++;
+      playSound('wrong');
+      return;
+    }
+    updateLessonStepCompletion(4, true);
+    playSound('correct');
+    feedback.textContent = `¡Muy bien! Escribiste «${activeReadingWord}» correctamente.`;
+  });
 }
 
 // Evalúa la respuesta elegida en la lección y actualiza el feedback.
@@ -1877,32 +2205,38 @@ function checkModalAnswer(selected, correct, btnId) {
     document.getElementById(btnId).className = "lesson-correct-pop bouncy bg-green-500 text-white border-4 border-green-700 font-black text-xl py-4 rounded-2xl shadow-md font-fredoka";
     document.querySelectorAll('#modal-game-area button').forEach(button => { button.disabled = true; });
     updateLessonStepCompletion(3, true);
-    const lessonId = appState.currentModalLesson.id;
-    const mistakes = appState.currentMistakes;
-    const stars = Math.max(0, 3 - Math.min(3, mistakes));
-    const wasRepeat = lessonHasBeenCompleted(appState.currentModalLesson);
-    if (lessonPreviewMode) {
-      setTimeout(() => {
-        closeLessonModal();
-        showResultsModal('Vista previa completada. No se guardó progreso.', stars, 0);
-      }, 700);
-      return;
-    }
-    recordCompletion('lesson', { id: lessonId, mistakes }).then(() => {
-      setTimeout(() => {
-        closeLessonModal();
-        showResultsModal(wasRepeat ? '¡Repaso completado!' : '¡Lección completada!', stars, wasRepeat ? 0 : 100);
-      }, 700);
-    }).catch(error => {
-      document.querySelectorAll('#modal-game-area button').forEach(button => { button.disabled = false; });
-      console.error('No se pudo guardar la finalización de la lección:', error);
-      owlSpeak(error.message);
-    });
+    completeCurrentLesson();
   } else {
     appState.currentMistakes++;
     playSound('wrong');
     owlSpeak(`Inténtalo de nuevo amiguito.`);
   }
+}
+
+function completeCurrentLesson() {
+  const lesson = appState.currentModalLesson;
+  if (!lesson) return;
+  const lessonId = lesson.id;
+  const mistakes = appState.currentMistakes;
+  const stars = Math.max(0, 3 - Math.min(3, mistakes));
+  const wasRepeat = lessonHasBeenCompleted(lesson);
+  if (lessonPreviewMode) {
+    setTimeout(() => {
+      closeLessonModal();
+      showResultsModal('Vista previa completada. No se guardó progreso.', stars, 0);
+    }, 700);
+    return;
+  }
+  recordCompletion('lesson', { id: lessonId, mistakes }).then(() => {
+    setTimeout(() => {
+      closeLessonModal();
+      showResultsModal(wasRepeat ? '¡Repaso completado!' : '¡Lección completada!', stars, wasRepeat ? 0 : 100);
+    }, 700);
+  }).catch(error => {
+    document.querySelectorAll('#modal-game-area button').forEach(button => { button.disabled = false; });
+    console.error('No se pudo guardar la finalización de la lección:', error);
+    owlSpeak(error.message);
+  });
 }
 
 // Abre el desafío del hito asociado a una lección.
@@ -2014,7 +2348,7 @@ function renderArcadeHub() {
     { id: "paint", title: "El Pincel Mágico", desc: "Dibuja trazos libres en canvas mientras escuchas fonemas.", icon: "fa-solid fa-wand-magic-sparkles", bg: "from-pink-600 to-purple-700" },
     { id: "memory", title: "Memoria Sonora", desc: "Encuentra las parejas de cartas escuchando su pronunciación.", icon: "fa-solid fa-brain", bg: "from-amber-500 to-yellow-600" },
     { id: "runner", title: "Carrera de Sílabas", desc: "Esquiva barriles y salta para recoger sílabas flotantes.", icon: "fa-solid fa-person-running", bg: "from-emerald-600 to-teal-800" },
-    { id: "fishing", title: "Pesca de Vocales", desc: "Pesca los peces que llevan la vocal solicitada por el búho.", icon: "fa-solid fa-fish", bg: "from-sky-500 to-blue-700" }
+    { id: "fishing", title: "Pesca de Vocales", desc: "Pesca los peces que llevan la vocal solicitada por el Mono Sabio.", icon: "fa-solid fa-fish", bg: "from-sky-500 to-blue-700" }
   ];
 
   arcadeGames.forEach(game => {

@@ -145,6 +145,8 @@ async function renderCustomGames() {
   const container = document.getElementById('custom-games-container');
   if (!container) return;
   container.replaceChildren();
+  container.className = 'rounded-3xl border-2 border-amber-200 bg-white/90 p-4 shadow-lg sm:p-6';
+  delete container.dataset.customGameId;
   if (appState.currentUser?.role !== 'alumno') {
     container.classList.add('hidden');
     return;
@@ -203,6 +205,16 @@ async function renderCustomGames() {
 function startCustomGame(game, container, options = {}) {
   const isPreview = options.preview === true;
   const onExit = options.onExit || renderCustomGames;
+  const returnToGames = () => {
+    if (returnToGamesTimer !== null) {
+      clearTimeout(returnToGamesTimer);
+      returnToGamesTimer = null;
+    }
+    onExit();
+  };
+  let returnToGamesTimer = null;
+  let completionHandled = false;
+  container.dataset.customGameId = String(game.id);
   const helpText = game.type === 'bridge'
     ? 'Completa cada palabra con la sílaba que falta. Toca o arrastra uno de los bloques con sílabas al espacio vacío.'
     : game.type === 'pairs'
@@ -219,7 +231,7 @@ function startCustomGame(game, container, options = {}) {
   exit.type = 'button';
   exit.className = 'rounded-xl bg-white px-4 py-2 font-black text-purple-900 shadow';
   exit.textContent = isPreview ? 'Volver a mis juegos creados' : 'Volver a mis juegos';
-  exit.addEventListener('click', onExit);
+  exit.addEventListener('click', returnToGames);
   const repeatHelp = makeGameSpeechButton('🔊 Escuchar instrucciones', helpText, 'rounded-xl bg-white px-4 py-2 font-black text-purple-900 shadow');
   const guidance = document.createElement('p');
   guidance.className = 'mb-4 rounded-xl bg-white/80 p-3 text-center font-bold';
@@ -233,20 +245,32 @@ function startCustomGame(game, container, options = {}) {
   let completed = 0;
   // Guarda el resultado al completar el juego, salvo en modo de vista previa.
   const complete = async () => {
-    if (isPreview || window.isStudentPreviewActive?.() === true) {
-      feedback.textContent = 'Vista previa completada. No se guardó ningún resultado.';
-      // Desactiva los controles cuando la vista previa termina.
+    if (completionHandled) return;
+    completionHandled = true;
+    const celebrateAndReturn = message => {
+      feedback.textContent = message;
       area.querySelectorAll('button').forEach(button => { button.disabled = true; });
+      window.triggerConfetti?.();
+      returnToGamesTimer = setTimeout(() => {
+        returnToGamesTimer = null;
+        if (container.isConnected &&
+            container.dataset.customGameId === String(game.id) &&
+            container.classList.contains('custom-game-stage')) {
+          onExit();
+        }
+      }, 2200);
+    };
+    if (isPreview || window.isStudentPreviewActive?.() === true) {
+      celebrateAndReturn('¡Juego completado! 🎉');
       return;
     }
     try {
       const response = await fetch(`/api/games/custom/${encodeURIComponent(game.id)}/complete`, { method: 'POST' });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || 'No se pudo guardar el resultado del juego.');
-      feedback.textContent = '¡Juego completado! 🎉';
-      // Bloquea los controles tras guardar la finalización.
-      area.querySelectorAll('button').forEach(button => { button.disabled = true; });
+      celebrateAndReturn('¡Juego completado! 🎉');
     } catch (error) {
+      completionHandled = false;
       feedback.textContent = error.message;
     }
   };

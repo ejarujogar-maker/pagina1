@@ -186,6 +186,24 @@ test('registration requires delivered email confirmation, and password reset rev
   assert.equal(registration.headers.get('set-cookie'), null);
   assert.match(registrationResult.message, /código de seis dígitos/i);
   assert.equal(sentMail.length, 1);
+  const duplicateRegistrationEmail = await request(origin, '/api/auth/register', {
+    name: 'Otro Estudiante',
+    email: 'ALUMNO@example.test',
+    username: 'otro_estudiante',
+    role: 'alumno',
+    password: 'Contraseña-segura-123'
+  });
+  assert.equal(duplicateRegistrationEmail.status, 409);
+  assert.match((await duplicateRegistrationEmail.json()).error, /correo o nombre de usuario ya está registrado/i);
+  const duplicateRegistrationUsername = await request(origin, '/api/auth/register', {
+    name: 'Otro Estudiante',
+    email: 'otro-estudiante@example.test',
+    username: 'ALUMNO_DEMO',
+    role: 'alumno',
+    password: 'Contraseña-segura-123'
+  });
+  assert.equal(duplicateRegistrationUsername.status, 409);
+
   const testDatabase = new DatabaseSync(path.join(tempDirectory, 'test.db'));
   try {
     const storedPassword = testDatabase.prepare(
@@ -387,6 +405,22 @@ test('registration requires delivered email confirmation, and password reset rev
   assert.equal(createdAccountResponse.status, 201);
   const managedUser = (await createdAccountResponse.json()).user;
   assert.equal(managedUser.emailVerified, true);
+  const duplicateAdminEmail = await request(origin, '/api/admin/users', {
+    name: 'Otra Cuenta',
+    email: managedUser.email.toUpperCase(),
+    username: 'otra_cuenta',
+    role: 'alumno',
+    password: 'Cuenta-Segura-2026!'
+  }, { Cookie: adminCookie });
+  assert.equal(duplicateAdminEmail.status, 409);
+  const duplicateAdminUsername = await request(origin, '/api/admin/users', {
+    name: 'Otra Cuenta',
+    email: 'otra-cuenta@example.test',
+    username: managedUser.username.toUpperCase(),
+    role: 'alumno',
+    password: 'Cuenta-Segura-2026!'
+  }, { Cookie: adminCookie });
+  assert.equal(duplicateAdminUsername.status, 409);
   const managedLogin = await request(origin, '/api/auth/login', {
     identifier: managedUser.username, password: 'Cuenta-Segura-2026!'
   });
@@ -530,6 +564,10 @@ test('registration requires delivered email confirmation, and password reset rev
 test('login has generic errors and rate limiting; private project files stay unavailable', async () => {
   const origin = await serverReady;
   assert.equal((await fetch(origin)).status, 200);
+  const favicon = await fetch(`${origin}/favicon.svg`);
+  assert.equal(favicon.status, 200);
+  assert.match(favicon.headers.get('content-type'), /image\/svg\+xml/);
+  assert.match(await favicon.text(), /<svg/);
   assert.equal((await fetch(`${origin}/api/progress`)).status, 401);
   assert.equal((await request(origin, '/api/progress/complete', { type: 'arcade', gameId: 'bubbles', level: 1 })).status, 401);
   const genericErrors = [];

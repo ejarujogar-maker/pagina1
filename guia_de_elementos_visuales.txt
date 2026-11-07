@@ -10,7 +10,7 @@ psicología visual infantil, diseño táctil y mecánicas de videojuegos.
 1. PERSONAJES CON PERSONALIDAD (EL BÚHO GUÍA)
 ------------------------------------------------------------------------
 * Compañero Animado con Expresiones:
-  - El búho no debe ser una imagen fija. Debe reaccionar al rendimiento del niño.
+  - El mono sabio no debe ser una imagen fija. Debe reaccionar al rendimiento del niño.
   - Expresiones clave: Alegría/festejo al acertar, carita de apoyo/ánimo al 
     fallar, y animación de parpadeo o saludo cuando está en espera.
 
@@ -24,7 +24,7 @@ psicología visual infantil, diseño táctil y mecánicas de videojuegos.
 * Mapa de Ruta Estilo "Camino del Tesoro":
   - La pantalla principal debe visualizarse como un sendero con islas, paradas 
     o fichas de camino.
-  - El búho debe posarse sobre el nodo o nivel actual por resolver.
+  - El mono sabio debe posarse sobre el nodo o nivel actual por resolver.
   - El camino recorrido debe marcarse de forma clara (cambio de color o trazado).
 
 * Iconos y Botones Táctiles ("Golosinas Visuales"):
@@ -64,7 +64,7 @@ psicología visual infantil, diseño táctil y mecánicas de videojuegos.
 * Coleccionables y Pegatinas (Stickers):
   - Crear una sección de "Álbum de Pegatinas" o cofre donde los niños reciban 
     recompensas por completar módulos.
-  - Accesorios para el búho: Permitir que el niño personalice su búho con gorros, 
+  - Accesorios para el mono: Permitir que el niño personalice su mono con gorros,
     gafas u otros accesorios al acumular estrellas.
 
 * Fondos Ilustrados y Amigables:

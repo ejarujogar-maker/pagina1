@@ -620,6 +620,16 @@ function normalizedIdentifier(value) {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
+// Comprueba si el correo o el nombre de usuario ya pertenece a una cuenta.
+function accountIdentifiersExist(email, username) {
+  const result = db.prepare(`
+    SELECT
+      EXISTS (SELECT 1 FROM users WHERE email = ? COLLATE NOCASE) AS emailExists,
+      EXISTS (SELECT 1 FROM users WHERE username = ? COLLATE NOCASE) AS usernameExists
+  `).get(email, username);
+  return result.emailExists || result.usernameExists;
+}
+
 // Comprueba si el usuario o la IP ya superaron los intentos permitidos.
 function loginIsLimited(identifier, ip) {
   const identifierHash = keyedDigest(`identifier:${identifier}`);
@@ -714,8 +724,8 @@ async function sendVerificationEmail(user) {
     await mailTransport.sendMail({
       from: process.env.SMTP_FROM || process.env.SMTP_USER,
       to: user.email,
-      subject: 'Código de verificación de LecturaClub',
-      text: `Hola ${user.name}, tu código de verificación de LecturaClub es: ${code}\nEs válido durante 10 minutos. Escríbelo en la página para activar tu cuenta.\nSi no creaste esta cuenta, ignora este mensaje.`
+      subject: 'Código de verificación de Leópolis',
+      text: `Hola ${user.name}, tu código de verificación de Leópolis es: ${code}\nEs válido durante 10 minutos. Escríbelo en la página para activar tu cuenta.\nSi no creaste esta cuenta, ignora este mensaje.`
     });
   } catch (error) {
     db.prepare('DELETE FROM email_verification_tokens WHERE user_id = ?').run(user.id);
@@ -774,6 +784,9 @@ app.post('/api/auth/register', async (req, res) => {
       passwordPolicyError(password) || !validRoles.has(role)) {
     return res.status(400).json({ error: 'Revisa el nombre (mínimo 8 caracteres, solo letras), correo, usuario (mínimo 4 caracteres), tipo de cuenta y contraseña (mayúscula, minúscula, número y carácter especial; mínimo 10 caracteres).' });
   }
+  if (accountIdentifiersExist(email, username)) {
+    return res.status(409).json({ error: 'El correo o nombre de usuario ya está registrado. Prueba con otros datos.' });
+  }
   if (!mailTransport || !baseUrl) {
     return res.status(503).json({ error: 'El registro requiere correo verificado. El envío de correo no está configurado en el servidor.' });
   }
@@ -808,7 +821,7 @@ app.post('/api/auth/register', async (req, res) => {
   } catch (error) {
     if (accountCreated) db.prepare('DELETE FROM users WHERE id = ? AND email_verified_at IS NULL').run(user.id);
     if (error.errcode === 2067 || error.message.includes('UNIQUE constraint failed: users.')) {
-      return res.status(409).json({ error: 'El correo o nombre de usuario ya está registrado.' });
+      return res.status(409).json({ error: 'El correo o nombre de usuario ya está registrado. Prueba con otros datos.' });
     }
     if (accountCreated) return res.status(503).json({ error: 'No se pudo enviar el correo de verificación. Comprueba la configuración e inténtalo de nuevo.' });
     console.error('No se pudo registrar la cuenta:', error);
@@ -994,7 +1007,7 @@ app.post('/api/auth/forgot-password', async (req, res) => {
       await mailTransport.sendMail({
         from: process.env.SMTP_FROM || process.env.SMTP_USER,
         to: user.email,
-        subject: 'Restablece tu contraseña de LecturaClub',
+        subject: 'Restablece tu contraseña de Leópolis',
         text: `Hola ${user.name}, usa este enlace antes de 30 minutos para cambiar tu contraseña: ${link}\nSi no solicitaste el cambio, ignora este mensaje.`
       });
     } catch (error) {
@@ -1052,6 +1065,9 @@ app.post('/api/admin/users', requireSuperAdmin, (req, res) => {
       !validRoles.has(role)) {
     return res.status(400).json({ error: 'Revisa nombre, correo, usuario, tipo de cuenta y contraseña.' });
   }
+  if (accountIdentifiersExist(email, username)) {
+    return res.status(409).json({ error: 'El correo o nombre de usuario ya está registrado. Prueba con otros datos.' });
+  }
   const digest = passwordHash(password);
   try {
     const user = {
@@ -1068,7 +1084,7 @@ app.post('/api/admin/users', requireSuperAdmin, (req, res) => {
     res.status(201).json({ user: publicUser(user) });
   } catch (error) {
     if (error.errcode === 2067 || error.message.includes('UNIQUE constraint failed: users.')) {
-      return res.status(409).json({ error: 'El correo o nombre de usuario ya está registrado.' });
+      return res.status(409).json({ error: 'El correo o nombre de usuario ya está registrado. Prueba con otros datos.' });
     }
     throw error;
   }
@@ -1722,6 +1738,8 @@ app.post('/api/progress/complete', requireAuth, (req, res) => {
 
 // Sirve la p?gina principal de la aplicaci?n para el navegador.
 app.get(['/', '/index.html'], (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
+// Sirve el icono del Mono Sabio para la pestaña del navegador.
+app.get('/favicon.svg', (req, res) => res.sendFile(path.join(__dirname, 'favicon.svg')));
 // Sirve el archivo JavaScript principal del cliente.
 app.get('/script.js', (req, res) => res.sendFile(path.join(__dirname, 'script.js')));
 // Entrega el script de protecci?n de sesi?n para la vista del alumno.
@@ -1752,5 +1770,5 @@ app.use((error, req, res, next) => {
 // Arranca el servidor HTTP para aceptar conexiones del navegador.
 const server = app.listen(port, () => {
   scheduleDatabaseBackup();
-  console.log(`LecturaClub disponible en http://localhost:${server.address().port}`);
+  console.log(`Leópolis disponible en http://localhost:${server.address().port}`);
 });

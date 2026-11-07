@@ -12,7 +12,7 @@ en la atención, la memoria, la motivación y la reducción del estrés visual.
 
 * NARANJA CÁLIDO / AMARILLO MOSTAZA (Entusiasmo y Desafío - #F59E0B / #F97316)
   - Efecto: Aumenta la energía, genera entusiasmo y capta la atención sin ser agresivo. Excelente para denotar momentos de logro o retos.
-  - Uso recomendado: Botones de "Desafío", tarjetas de actividades especiales, bordes y el personaje principal (ej. el Búho).
+  - Uso recomendado: Botones de "Desafío", tarjetas de actividades especiales, bordes y el personaje principal (ej. el Mono Sabio).
   - Ejemplo en la interfaz: Un fondo en degradado de naranja cálido con texto o botones contrastantes en morado/púrpura (#5B21B6) para destacar llamados a la acción como "¡Jugar!".
 
 * AZUL (Calmante y Enfocado)

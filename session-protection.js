@@ -1,5 +1,5 @@
 // Determina el tiempo de inactividad antes de cerrar la sesión y el tiempo máximo de sesión del alumno antes de forzar un descanso.
-const SESSION_IDLE_LIMIT_MS = 5 * 60 * 1000;
+const SESSION_IDLE_LIMIT_MS = 10 * 60 * 1000;
 const STUDENT_SESSION_LIMIT_MS = 90 * 60 * 1000;
 const STUDENT_BREAK_LIMIT_MS = 15 * 60 * 1000;
 const STUDENT_SESSION_STORAGE_PREFIX = 'lecturaclub_student_session_';
@@ -13,6 +13,12 @@ let activeStudentSession = null;
 let studentBreakVisible = false;
 let sessionRemoteCheckInterval = null;
 let sessionRemoteCheckPending = false;
+
+// Evita tratar la vista simulada del alumno como una sesión real de alumno.
+function isStaffStudentPreviewActive() {
+  return typeof window.isStudentPreviewActive === 'function' &&
+    window.isStudentPreviewActive();
+}
 
 // Recupera la sesión del alumno desde sessionStorage con validación básica.
 function readStudentSession(key) {
@@ -80,6 +86,10 @@ function beginStudentBreak(now) {
 function checkSessionProtection() {
   if (!appState.currentUser) return;
   const now = Date.now();
+  if (isStaffStudentPreviewActive()) {
+    sessionProtectionActivityAt = now;
+    return;
+  }
   if (now - sessionProtectionActivityAt >= SESSION_IDLE_LIMIT_MS) {
     if (sessionProtectionLogoutPending || now < sessionProtectionRetryAt) return;
     sessionProtectionLogoutPending = true;
@@ -101,16 +111,18 @@ function checkSessionProtection() {
 
 // Consulta el estado remoto de la sesión para cerrar la sesión si fue invalidada.
 async function checkRemoteSession() {
-  if (!appState.currentUser || sessionRemoteCheckPending) return;
+  if (!appState.currentUser || sessionRemoteCheckPending || isStaffStudentPreviewActive()) return;
   sessionRemoteCheckPending = true;
   try {
     const response = await fetch('/api/auth/me');
+    if (isStaffStudentPreviewActive()) return;
     if (response.status === 401 || response.status === 403) {
       await handleLogout('remote');
       return;
     }
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
+    if (isStaffStudentPreviewActive()) return;
     if (!result.user || result.user.id !== appState.currentUser.id) {
       await handleLogout('remote');
     }

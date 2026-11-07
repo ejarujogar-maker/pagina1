@@ -2,8 +2,9 @@
 <html lang="es" class="h-full bg-slate-100">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>LecturaClub - Aprende a Leer Jugando</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Leópolis - Aprende a Leer Jugando</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=1">
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -15,7 +16,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@600;700;800;900;1000&display=swap" rel="stylesheet">
 
   <!-- Enlace al archivo CSS externo -->
-  <link rel="stylesheet" href="style.css?v=15">
+  <link rel="stylesheet" href="style.css?v=18">
 
   <script>
     tailwind.config = {
@@ -69,11 +70,17 @@
       <!-- Brand Logo -->
       <div onclick="switchTab('map')" class="flex items-center space-x-3 cursor-pointer group">
         <div class="bg-gradient-to-tr from-purple-600 to-pink-500 text-white w-11 h-11 rounded-2xl shadow-lg flex items-center justify-center group-hover:rotate-6 transition-transform">
-          <i class="fa-solid fa-graduation-cap text-2xl text-yellow-300"></i>
+          <svg class="h-9 w-9 drop-shadow-sm" viewBox="0 0 48 48" role="img" aria-label="Castillo colorido" xmlns="http://www.w3.org/2000/svg">
+            <path d="M7 39V19l7 4v-9l7 4V9h8v9l7-4v9l7-4v20H7Z" fill="#F8FAFC" stroke="#312E81" stroke-linejoin="round" stroke-width="2"/>
+            <path d="M7 19l7 4v-9l7 4 4-6 4 6 7-4v9l7-4v7H7v-7Z" fill="#FBBF24" stroke="#312E81" stroke-linejoin="round" stroke-width="2"/>
+            <path d="M18 39V28a6 6 0 0 1 12 0v11" fill="#A855F7" stroke="#312E81" stroke-width="2"/>
+            <path d="M10 31h5v5h-5zm23 0h5v5h-5z" fill="#38BDF8" stroke="#312E81" stroke-width="1.5"/>
+            <path d="M24 9V4h10l-4 3 4 2h-8" fill="#FB7185" stroke="#312E81" stroke-linejoin="round" stroke-width="1.5"/>
+          </svg>
         </div>
         <div>
           <h1 class="text-xl sm:text-2xl font-black font-fredoka tracking-tight bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500 bg-clip-text text-transparent leading-none">
-            LecturaClub
+            Leópolis
           </h1>
           <p class="text-[10px] text-purple-600 font-extrabold uppercase tracking-widest -mt-0.5 hidden sm:block">Aprende a Leer Jugando</p>
         </div>
@@ -137,7 +144,7 @@
     <div class="lg:hidden bg-purple-900 text-white px-4 py-1.5 flex items-center justify-between text-xs font-black">
       <div class="flex items-center space-x-1">
         <span class="text-purple-300">Tu ruta:</span>
-        <span id="mobile-progress-text" class="text-yellow-300" aria-label="Progreso visual">🦉</span>
+        <span id="mobile-progress-text" class="text-yellow-300" aria-label="Progreso visual">🐵</span>
       </div>
       <div class="flex items-center space-x-1 text-emerald-300">
         <i class="fa-solid fa-bolt text-amber-400"></i>
@@ -156,18 +163,18 @@
       <div class="bg-gradient-to-r from-purple-700 via-indigo-600 to-pink-600 rounded-3xl p-6 sm:p-8 text-white shadow-xl relative overflow-hidden flex flex-col sm:flex-row items-center justify-between gap-6 border-4 border-purple-200">
         <div class="relative z-10 max-w-xl text-center sm:text-left">
           <div class="inline-flex items-center gap-2 bg-white/20 text-yellow-300 text-[11px] font-black uppercase tracking-widest px-3.5 py-1 rounded-full border border-white/20 backdrop-blur-sm">
-            <span>🎓 Lectura Guiada por Voz &bull; Letras, Sílabas y Lecturas</span>
+            <span>🏰 Lectura Guiada por Voz &bull; Letras, Sílabas y Lecturas</span>
           </div>
           <h2 class="text-2xl sm:text-4xl font-black font-fredoka mt-2 leading-tight">
             ¡Abecedario completo &rarr; Sílabas &rarr; Frases!
           </h2>
-          <p id="owl-speech-text" class="mt-2 text-purple-100 text-xs sm:text-sm font-semibold leading-relaxed">
-            ¡Hola, amiguito! Soy el Búho Sabio. Vamos a aprender con lecciones mejoradas y minijuegos de 3 niveles. ¡Toca cualquier lección para comenzar!
+          <p id="monkey-speech-text" class="mt-2 text-purple-100 text-xs sm:text-sm font-semibold leading-relaxed">
+            ¡Hola, amiguito! Soy el Mono Sabio. Vamos a aprender con lecciones mejoradas y minijuegos de 3 niveles. ¡Toca cualquier lección para comenzar!
           </p>
           <div class="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
             <button onclick="speakCurrentInstruction(true)" class="bouncy bg-amber-400 hover:bg-amber-300 text-slate-900 font-black px-5 py-2.5 rounded-2xl shadow-lg border-b-4 border-amber-600 flex items-center space-x-2 text-xs font-fredoka">
               <i class="fa-solid fa-volume-high text-lg"></i>
-              <span>🔊 Escuchar al Búho Sabio</span>
+              <span>🔊 Escuchar al Mono Sabio</span>
             </button>
             <button onclick="scrollToNextLesson()" class="bouncy bg-yellow-400 hover:bg-yellow-300 text-purple-950 font-black px-5 py-2.5 rounded-2xl shadow-lg border-b-4 border-yellow-600 text-xs flex items-center gap-2 font-fredoka">
               <i class="fa-solid fa-compass"></i> Siguiente Lección
@@ -176,8 +183,8 @@
         </div>
 
         <div onclick="speakCurrentInstruction(true)" class="bouncy relative z-10 shrink-0 w-28 h-28 sm:w-36 sm:h-36 bg-amber-400 text-slate-900 rounded-full border-4 border-white flex flex-col items-center justify-center shadow-2xl cursor-pointer group">
-          <div id="mascot-home-owl" class="text-5xl sm:text-6xl text-slate-900 animate-float">🦉</div>
-          <span class="text-[10px] font-black uppercase tracking-wider bg-slate-900 text-amber-300 px-2.5 py-0.5 rounded-full mt-1 font-fredoka">Búho Sabio</span>
+          <div id="mascot-home-monkey" class="text-5xl sm:text-6xl text-slate-900 animate-float">🐵</div>
+          <span class="text-[10px] font-black uppercase tracking-wider bg-slate-900 text-amber-300 px-2.5 py-0.5 rounded-full mt-1 font-fredoka">Mono Sabio</span>
         </div>
       </div>
 
@@ -246,7 +253,7 @@
           </div>
           <div>
             <h3 id="auth-modal-title" class="font-black font-fredoka text-lg">Iniciar sesión</h3>
-            <p class="text-[10px] text-purple-300 font-bold">Acceso seguro a LecturaClub</p>
+            <p class="text-[10px] text-purple-300 font-bold">Acceso seguro a Leópolis</p>
           </div>
         </div>
         <button id="auth-close" onclick="closeAuthModal()" class="w-8 h-8 text-purple-300 hover:text-white rounded-xl flex items-center justify-center transition" aria-label="Cerrar">
@@ -344,7 +351,7 @@
     <section class="bg-white rounded-3xl shadow-2xl max-w-5xl w-full max-h-[94vh] overflow-y-auto border-4 border-emerald-300 p-5 sm:p-7 my-auto">
       <div class="flex justify-between items-center mb-5">
         <div>
-          <h2 class="text-2xl sm:text-3xl font-black font-fredoka text-purple-950">Aula del Búho Sabio</h2>
+          <h2 class="text-2xl sm:text-3xl font-black font-fredoka text-purple-950">Aula del Mono Sabio</h2>
           <p class="text-sm text-slate-600">Reportes, lecciones y juegos personalizados.</p>
         </div>
         <button onclick="closeTeacherDashboard()" class="text-slate-500 hover:text-slate-900 p-2" aria-label="Cerrar avances"><i class="fa-solid fa-xmark text-xl"></i></button>
@@ -521,7 +528,7 @@
 
   <div id="student-rest-lock" class="fixed inset-0 z-[10000] hidden items-center justify-center bg-sky-950/95 p-4" role="dialog" aria-modal="true" aria-labelledby="student-rest-title" aria-describedby="student-rest-message" tabindex="-1">
     <section class="w-full max-w-xl rounded-3xl border-4 border-emerald-400 bg-white p-7 text-center shadow-2xl sm:p-10">
-      <div class="mx-auto mb-4 grid h-24 w-24 place-items-center rounded-full bg-emerald-100 text-6xl" aria-hidden="true">🦉🌿</div>
+      <div class="mx-auto mb-4 grid h-24 w-24 place-items-center rounded-full bg-emerald-100 text-6xl" aria-hidden="true">🐵🌿</div>
       <h2 id="student-rest-title" class="font-fredoka text-3xl font-black text-purple-950 sm:text-4xl">¡Hora de descansar la vista!</h2>
       <p id="student-rest-message" class="mt-4 text-lg font-bold leading-relaxed text-slate-700">Ya llevas una hora aprendiendo en la pantalla. Sal a dar un paseo, mira a lo lejos y relaja tus ojos. La página estará en pausa durante tu descanso.</p>
       <p class="mt-6 text-sm font-black uppercase tracking-wide text-emerald-800">Podrás continuar en</p>
@@ -545,6 +552,7 @@
           <div id="modal-dot-1" class="w-3.5 h-3.5 rounded-full bg-purple-600"></div>
           <div id="modal-dot-2" class="w-3.5 h-3.5 rounded-full bg-slate-200"></div>
           <div id="modal-dot-3" class="w-3.5 h-3.5 rounded-full bg-slate-200"></div>
+          <div id="modal-dot-4" class="hidden w-3.5 h-3.5 rounded-full bg-slate-200"></div>
         </div>
 
         <button onclick="closeLessonModal()" class="w-8 h-8 text-purple-300 hover:text-white rounded-xl flex items-center justify-center transition">
@@ -554,8 +562,8 @@
 
       <div class="bg-amber-300 px-4 py-2.5 flex items-center justify-between border-b-2 border-amber-400">
         <div class="flex items-center space-x-2.5">
-          <span class="text-2xl">🦉</span>
-          <span id="mascot-speaking-bubble" class="text-xs font-black text-slate-900 truncate max-w-[200px] sm:max-w-xs">Búho Sabio habla...</span>
+          <span class="text-2xl">🐵</span>
+          <span id="mascot-speaking-bubble" class="text-xs font-black text-slate-900 truncate max-w-[200px] sm:max-w-xs">Mono Sabio habla...</span>
         </div>
         <button onclick="speakCurrentInstruction(true)" class="bouncy bg-slate-900 text-amber-300 font-black text-xs px-3 py-1.5 rounded-xl shadow flex items-center space-x-1.5 font-fredoka">
           <i class="fa-solid fa-volume-high"></i>
@@ -615,7 +623,7 @@
   <!-- FOOTER -->
   <footer class="bg-white border-t border-purple-100 py-4 text-center text-xs text-purple-400 font-bold mt-auto">
     <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <span>LecturaClub &copy; 2026 - Plataforma Educativa Interactiva Infantil</span>
+      <span>Leópolis &copy; 2026 - Plataforma Educativa Interactiva Infantil</span>
       <div class="flex items-center space-x-3">
         <span id="progress-sync-status" class="text-purple-600"><i class="fa-solid fa-floppy-disk mr-1"></i> Progreso guardado en la cuenta</span>
       </div>
@@ -626,10 +634,10 @@
   <script src="arcade-content.js?v=2"></script>
   <script src="emoji-catalog.js?v=3"></script>
   <script src="lesson-player.js?v=2"></script>
-  <script src="custom-games.js?v=6"></script>
+  <script src="custom-games.js?v=7"></script>
   <script src="teacher-dashboard.js?v=8"></script>
   <script src="pedagogical-content.js?v=4"></script>
-  <script src="session-protection.js?v=4"></script>
-  <script src="script.js?v=19"></script>
+  <script src="session-protection.js?v=5"></script>
+  <script src="script.js?v=26"></script>
 </body>
 </html>
